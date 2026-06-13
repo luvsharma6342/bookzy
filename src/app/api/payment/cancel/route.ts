@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
-import { razorpay } from '@/lib/razorpay';
+import { getRazorpay } from '@/lib/razorpay';
 import prisma from '@/lib/prisma';
 
 export async function DELETE(req: NextRequest) {
@@ -26,7 +26,7 @@ export async function DELETE(req: NextRequest) {
     }
 
     // Cancel at period end (cancel_at_cycle_end = true means they keep access until period ends)
-    await razorpay.subscriptions.cancel(business.razorpaySubscriptionId, true);
+    await getRazorpay().subscriptions.cancel(business.razorpaySubscriptionId, true);
 
     // Mark as cancelled in our DB (they still have access until planExpiresAt)
     const updated = await prisma.business.update({

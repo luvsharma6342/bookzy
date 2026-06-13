@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
-import { razorpay, RAZORPAY_PLAN_IDS } from '@/lib/razorpay';
+import { getRazorpay, RAZORPAY_PLAN_IDS } from '@/lib/razorpay';
 import prisma from '@/lib/prisma';
 
 export async function POST(req: NextRequest) {
@@ -40,14 +40,14 @@ export async function POST(req: NextRequest) {
     // If there's an existing active subscription, cancel it first
     if (business.razorpaySubscriptionId) {
       try {
-        await razorpay.subscriptions.cancel(business.razorpaySubscriptionId, false);
+        await getRazorpay().subscriptions.cancel(business.razorpaySubscriptionId, false);
       } catch {
         // Ignore errors cancelling old subscription (may already be inactive)
       }
     }
 
     // Create a new Razorpay subscription
-    const subscription = await razorpay.subscriptions.create({
+    const subscription = await getRazorpay().subscriptions.create({
       plan_id: planId,
       total_count: 12, // 12 billing cycles (1 year)
       quantity: 1,
