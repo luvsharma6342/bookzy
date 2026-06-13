@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { cacheGet, cacheSet, cacheDel, cacheKeys, TTL } from "@/lib/redis";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -11,17 +12,18 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "businessId is required" }, { status: 400 });
   }
 
-  const staff = await prisma.staff.findMany({
-    where: { businessId },
-  });
+  // Try cache first
+  const cached = await cacheGet(cacheKeys.staff(businessId));
+  if (cached) return NextResponse.json(cached);
 
+  const staff = await prisma.staff.findMany({ where: { businessId } });
+
+  await cacheSet(cacheKeys.staff(businessId), staff, TTL.STOREFRONT);
   return NextResponse.json(staff);
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -35,10 +37,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    // Verify ownership
-    const business = await prisma.business.findUnique({
-      where: { id: businessId },
-    });
+    const business = await prisma.business.findUnique({ where: { id: businessId } });
 
     if (!business) {
       return NextResponse.json({ error: "Business not found" }, { status: 404 });
@@ -71,6 +70,9 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Invalidate staff cache
+    await cacheDel(cacheKeys.staff(businessId));
+
     return NextResponse.json(staffMember);
   } catch (error: any) {
     console.error("Error saving staff:", error);
@@ -79,9 +81,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -108,9 +108,10 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    await prisma.staff.delete({
-      where: { id },
-    });
+    await prisma.staff.delete({ where: { id } });
+
+    // Invalidate staff cache
+    await cacheDel(cacheKeys.staff(staffMember.businessId));
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

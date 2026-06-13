@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { cacheGet, cacheSet, cacheDel, cacheKeys, TTL } from "@/lib/redis";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -11,17 +12,18 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "businessId is required" }, { status: 400 });
   }
 
-  const services = await prisma.service.findMany({
-    where: { businessId },
-  });
+  // Try cache first
+  const cached = await cacheGet(cacheKeys.services(businessId));
+  if (cached) return NextResponse.json(cached);
 
+  const services = await prisma.service.findMany({ where: { businessId } });
+
+  await cacheSet(cacheKeys.services(businessId), services, TTL.STOREFRONT);
   return NextResponse.json(services);
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -35,10 +37,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    // Verify business ownership
-    const business = await prisma.business.findUnique({
-      where: { id: businessId },
-    });
+    const business = await prisma.business.findUnique({ where: { id: businessId } });
 
     if (!business) {
       return NextResponse.json({ error: "Business not found" }, { status: 404 });
@@ -50,7 +49,6 @@ export async function POST(req: NextRequest) {
 
     let service;
     if (id && !id.startsWith("s-")) {
-      // Update
       service = await prisma.service.update({
         where: { id },
         data: {
@@ -63,7 +61,6 @@ export async function POST(req: NextRequest) {
         },
       });
     } else {
-      // Create new
       service = await prisma.service.create({
         data: {
           name,
@@ -77,6 +74,9 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Invalidate services cache for this business
+    await cacheDel(cacheKeys.services(businessId));
+
     return NextResponse.json(service);
   } catch (error: any) {
     console.error("Error saving service:", error);
@@ -85,9 +85,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -114,9 +112,10 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    await prisma.service.delete({
-      where: { id },
-    });
+    await prisma.service.delete({ where: { id } });
+
+    // Invalidate services cache
+    await cacheDel(cacheKeys.services(service.businessId));
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

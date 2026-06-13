@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { cacheGet, cacheSet, cacheDel, cacheKeys, TTL } from "@/lib/redis";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -11,11 +12,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "businessId is required" }, { status: 400 });
   }
 
+  // Try cache first (short TTL — bookings change frequently)
+  const cached = await cacheGet(cacheKeys.bookings(businessId));
+  if (cached) return NextResponse.json(cached);
+
   const bookings = await prisma.booking.findMany({
     where: { businessId },
     orderBy: { bookingTime: "desc" },
   });
 
+  await cacheSet(cacheKeys.bookings(businessId), bookings, TTL.BOOKINGS);
   return NextResponse.json(bookings);
 }
 
@@ -38,7 +44,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    // Standard booking creation on client side (or chatbot)
     const booking = await prisma.booking.create({
       data: {
         businessId,
@@ -54,14 +59,13 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Create a companion booking_created analytic event
+    // Create booking_created analytic event
     await prisma.analyticsEvent.create({
-      data: {
-        businessId,
-        eventType: "booking_created",
-        timestamp: new Date(),
-      },
+      data: { businessId, eventType: "booking_created", timestamp: new Date() },
     });
+
+    // Invalidate bookings cache so dashboard and storefront get fresh data
+    await cacheDel(cacheKeys.bookings(businessId));
 
     return NextResponse.json(booking);
   } catch (error: any) {
@@ -71,9 +75,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -87,7 +89,6 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "ID and status are required" }, { status: 400 });
     }
 
-    // Verify ownership
     const booking = await prisma.booking.findUnique({
       where: { id },
       include: { business: true },
@@ -105,6 +106,9 @@ export async function PUT(req: NextRequest) {
       where: { id },
       data: { status },
     });
+
+    // Invalidate bookings cache on status change
+    await cacheDel(cacheKeys.bookings(booking.businessId));
 
     return NextResponse.json(updated);
   } catch (error: any) {
