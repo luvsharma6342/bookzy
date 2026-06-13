@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { Eye, ArrowLeft } from "lucide-react";
 
 export default function PrivacyPage() {
@@ -32,14 +32,14 @@ export default function PrivacyPage() {
           <div className="flex items-start gap-3 p-4 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-900 text-sm">
             <Eye className="w-5 h-5 shrink-0 mt-0.5 text-indigo-500" />
             <p>
-              Your privacy is of utmost importance to us. This Privacy Policy details how Bookzy collects, stores, protects, and utilizes the data you share when using our SaaS platforms.
+              Your privacy is of utmost importance to us. This Privacy Policy details how Bookze collects, stores, protects, and utilizes the data you share when using our SaaS platforms.
             </p>
           </div>
 
           <section className="space-y-3">
             <h2 className="text-xl font-bold font-title border-b border-slate-100 pb-2">1. Operating Entity</h2>
             <p className="text-slate-600 text-sm leading-relaxed">
-              Bookzy is owned and operated by <strong>Luv Sharma</strong> as a Sole Proprietorship firm registered in India. The Proprietor is the primary data controller responsible for managing the security of your stored business and customer records.
+              Bookze is owned and operated by <strong>Luv Sharma</strong> as a Sole Proprietorship firm registered in India. The Proprietor is the primary data controller responsible for managing the security of your stored business and customer records.
             </p>
           </section>
 
@@ -97,8 +97,8 @@ export default function PrivacyPage() {
           <section className="space-y-3 text-center border-t border-slate-100 pt-6">
             <p className="text-slate-500 text-xs">
               If you have any questions or data request queries regarding this Privacy Policy, please contact us at{" "}
-              <a href="mailto:support@bookzy.in" className="text-indigo-600 hover:underline">
-                support@bookzy.in
+              <a href="mailto:luvsharma105@gmail.com" className="text-indigo-600 hover:underline">
+                luvsharma105@gmail.com
               </a>.
             </p>
           </section>

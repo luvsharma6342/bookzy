@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
@@ -102,7 +102,7 @@ function AuthForm() {
               B
             </span>
             <span className="text-2xl font-extrabold tracking-tight font-title">
-              Bookzy
+              Bookze
             </span>
           </Link>
           <h2 className="text-2xl font-bold font-title">
@@ -220,7 +220,7 @@ function AuthForm() {
           <div className="text-center mt-6 pt-5 border-t border-slate-100 text-sm text-slate-500">
             {isLogin ? (
               <>
-                New to Bookzy?{" "}
+                New to Bookze?{" "}
                 <button
                   onClick={() => setIsLogin(false)}
                   className="font-semibold text-indigo-600 hover:underline"

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { Mail, Phone, MapPin, ArrowLeft, Send } from "lucide-react";
@@ -55,8 +55,8 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Support Email</h4>
-                  <a href="mailto:support@bookzy.in" className="text-sm text-indigo-600 hover:underline mt-1 block font-medium">
-                    support@bookzy.in
+                  <a href="mailto:luvsharma105@gmail.com" className="text-sm text-indigo-600 hover:underline mt-1 block font-medium">
+                    luvsharma105@gmail.com
                   </a>
                 </div>
               </div>
@@ -76,7 +76,7 @@ export default function ContactPage() {
 
             <div className="pt-6 border-t border-slate-100 text-xs text-slate-400 leading-relaxed">
               <strong>Sole Proprietorship Details:</strong><br />
-              Bookzy Platform is owned and operated by Luv Sharma as a registered Sole Proprietor in Uttar Pradesh, India.
+              Bookze Platform is owned and operated by Luv Sharma as a registered Sole Proprietor in Uttar Pradesh, India.
             </div>
           </div>
 

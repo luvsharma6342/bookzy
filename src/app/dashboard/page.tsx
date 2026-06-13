@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -413,7 +413,7 @@ export default function MerchantDashboard() {
           </div>
           <h2 className="text-3xl font-extrabold font-title mb-2 tracking-tight">Create Your Business Profile</h2>
           <p className="text-slate-400 max-w-sm mb-8 text-sm leading-relaxed">
-            Welcome to Bookzy! To start tracking client bookings, managing services, and viewing analytics, set up your profile below.
+            Welcome to Bookze! To start tracking client bookings, managing services, and viewing analytics, set up your profile below.
           </p>
 
           <form 
@@ -553,7 +553,7 @@ export default function MerchantDashboard() {
         <div style={{ marginBottom: '2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
             <span style={{ height: '2rem', width: '2rem', borderRadius: '6px', background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800 }}>B</span>
-            <span style={{ fontSize: '1.25rem', fontWeight: 800, fontFamily: 'var(--font-title)' }}>Bookzy Dashboard</span>
+            <span style={{ fontSize: '1.25rem', fontWeight: 800, fontFamily: 'var(--font-title)' }}>Bookze Dashboard</span>
           </div>
 
           <label className="form-label" style={{ fontSize: '0.75rem', opacity: 0.6 }}>Active Business</label>

@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { Sparkles, Users, Target, ShieldCheck, ArrowLeft } from "lucide-react";
 
 export default function AboutPage() {
@@ -20,7 +20,7 @@ export default function AboutPage() {
             B
           </div>
           <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight font-title">
-            About Bookzy
+            About Bookze
           </h1>
           <p className="text-slate-500 mt-3 max-w-xl mx-auto text-base">
             Empowering service entrepreneurs and local business owners across India with frictionless, WhatsApp-first booking technology.
@@ -34,7 +34,7 @@ export default function AboutPage() {
               <span className="badge badge-primary">Our Story</span>
               <h2 className="text-2xl font-bold font-title">Simplifying Local Commerce</h2>
               <p className="text-slate-600 text-sm leading-relaxed">
-                Bookzy was born out of a simple observation: millions of barbers, trainers, doctors, and tutors in India schedule appointments manually over messy calls and WhatsApp chats. Traditional booking apps are heavy, require app installs, and drop client conversions.
+                Bookze was born out of a simple observation: millions of barbers, trainers, doctors, and tutors in India schedule appointments manually over messy calls and WhatsApp chats. Traditional booking apps are heavy, require app installs, and drop client conversions.
               </p>
               <p className="text-slate-600 text-sm leading-relaxed">
                 We designed a lightweight web storefront creator that takes under 5 minutes to set up, requires zero client app downloads, and redirects the booking details directly to WhatsApp—where Indian customers spend most of their digital time.
@@ -90,7 +90,7 @@ export default function AboutPage() {
           <div>
             <h3 className="text-lg font-bold font-title">Founder Details & Operating Registration</h3>
             <p className="text-slate-400 text-xs mt-1">
-              Bookzy Platform is a Sole Proprietorship founded by <strong>Luv Sharma</strong>.
+              Bookze Platform is a Sole Proprietorship founded by <strong>Luv Sharma</strong>.
             </p>
             <p className="text-slate-400 text-xs mt-0.5">
               Primary Office: Noida, Sector 18, Uttar Pradesh, 201301, India.

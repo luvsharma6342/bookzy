@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { RefreshCw, ArrowLeft } from "lucide-react";
 
 export default function RefundPage() {
@@ -32,21 +32,21 @@ export default function RefundPage() {
           <div className="flex items-start gap-3 p-4 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-900 text-sm">
             <RefreshCw className="w-5 h-5 shrink-0 mt-0.5 text-indigo-500 animate-spin-slow" />
             <p>
-              Please read our cancellation and billing policies details below. By subscribing to any growth or pro packages on Bookzy, you agree to these refund terms.
+              Please read our cancellation and billing policies details below. By subscribing to any growth or pro packages on Bookze, you agree to these refund terms.
             </p>
           </div>
 
           <section className="space-y-3">
             <h2 className="text-xl font-bold font-title border-b border-slate-100 pb-2">1. Operating Entity</h2>
             <p className="text-slate-600 text-sm leading-relaxed">
-              Bookzy is owned and operated by <strong>Luv Sharma</strong> as a Sole Proprietorship firm registered in India. All subscription fees are processed under the Proprietor's accounts via Razorpay secure gateways.
+              Bookze is owned and operated by <strong>Luv Sharma</strong> as a Sole Proprietorship firm registered in India. All subscription fees are processed under the Proprietor's accounts via Razorpay secure gateways.
             </p>
           </section>
 
           <section className="space-y-3">
             <h2 className="text-xl font-bold font-title border-b border-slate-100 pb-2">2. Subscription Cancellation</h2>
             <p className="text-slate-600 text-sm leading-relaxed">
-              You retain the freedom to cancel your Bookzy subscription plan at any time:
+              You retain the freedom to cancel your Bookze subscription plan at any time:
             </p>
             <ul className="list-disc list-inside text-slate-600 text-sm space-y-1 pl-2">
               <li>Cancellations must be requested or executed directly in your merchant panel settings before the next renewal invoice date.</li>
@@ -58,27 +58,27 @@ export default function RefundPage() {
           <section className="space-y-3">
             <h2 className="text-xl font-bold font-title border-b border-slate-100 pb-2">3. Refund Terms</h2>
             <p className="text-slate-600 text-sm leading-relaxed">
-              Bookzy operates on a strict **No Refund** framework:
+              Bookze operates on a strict **No Refund** framework:
             </p>
             <ul className="list-disc list-inside text-slate-600 text-sm space-y-2 pl-2">
               <li><strong>Monthly Packages:</strong> Monthly plans are non-refundable after activation or auto-renewal charge. We do not provide pro-rated or partial refunds for unused days inside the active billing period.</li>
               <li><strong>Annual Packages:</strong> Annual plans are non-refundable after 3 days of activation. If you experience technical errors preventing the use of the platform within the first 3 days of registration, please contact support for details.</li>
-              <li><strong>No-Shows & Client Bookings:</strong> Bookzy is a booking facilitator software. We do not handle payment collection or disputes arising between you (the merchant) and your clients/customers. Refund terms for physical services belong strictly to your own business policies.</li>
+              <li><strong>No-Shows & Client Bookings:</strong> Bookze is a booking facilitator software. We do not handle payment collection or disputes arising between you (the merchant) and your clients/customers. Refund terms for physical services belong strictly to your own business policies.</li>
             </ul>
           </section>
 
           <section className="space-y-3">
             <h2 className="text-xl font-bold font-title border-b border-slate-100 pb-2">4. Disputed Billings & Processing Errors</h2>
             <p className="text-slate-600 text-sm leading-relaxed">
-              If you believe you have been charged incorrectly due to gateway processing double-debits, please contact our billing desk immediately at <a href="mailto:support@bookzy.in" className="text-indigo-600 hover:underline">support@bookzy.in</a>. Any confirmed billing anomalies are investigated, and if valid, resolved by triggering refunds directly through the Razorpay panel to the original payment source.
+              If you believe you have been charged incorrectly due to gateway processing double-debits, please contact our billing desk immediately at <a href="mailto:luvsharma105@gmail.com" className="text-indigo-600 hover:underline">luvsharma105@gmail.com</a>. Any confirmed billing anomalies are investigated, and if valid, resolved by triggering refunds directly through the Razorpay panel to the original payment source.
             </p>
           </section>
 
           <section className="space-y-3 text-center border-t border-slate-100 pt-6">
             <p className="text-slate-500 text-xs">
               If you have any cancellation queries or billing issues regarding our Refund Policy, please contact us at{" "}
-              <a href="mailto:support@bookzy.in" className="text-indigo-600 hover:underline">
-                support@bookzy.in
+              <a href="mailto:luvsharma105@gmail.com" className="text-indigo-600 hover:underline">
+                luvsharma105@gmail.com
               </a>.
             </p>
           </section>

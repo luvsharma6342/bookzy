@@ -1,4 +1,4 @@
-// Mock database engine for Bookzy, persisting data to localStorage for local demonstrability
+﻿// Mock database engine for Bookze, persisting data to localStorage for local demonstrability
 
 export interface Business {
   id: string;

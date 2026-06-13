@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -63,7 +63,7 @@ export default function LandingPage() {
           category: demoCategory,
           phone: '+919999999999',
           city: 'Local Area',
-          description: 'Newly generated storefront booking page via Bookzy.',
+          description: 'Newly generated storefront booking page via Bookze.',
         })
       });
 
@@ -104,7 +104,7 @@ export default function LandingPage() {
 
       {/* Top Banner for Local Language */}
       <div style={{ background: 'linear-gradient(90deg, #6366f1, #a855f7)', color: 'white', padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 600, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}>
-        <span>🚀 {isHindi ? 'अब बुकजी हिंदी में भी उपलब्ध है!' : 'Now Bookzy is available in Hindi & English!'}</span>
+        <span>🚀 {isHindi ? 'अब बुकजी हिंदी में भी उपलब्ध है!' : 'Now Bookze is available in Hindi & English!'}</span>
         <button
           onClick={() => setIsHindi(!isHindi)}
           style={{ background: 'white', color: '#6366f1', border: 'none', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
@@ -119,7 +119,7 @@ export default function LandingPage() {
         <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '4.5rem' }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ height: '2.5rem', width: '2.5rem', borderRadius: '8px', background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: '1.25rem' }}>B</span>
-            <span style={{ fontSize: '1.5rem', fontWeight: 800, fontFamily: 'var(--font-title)', letterSpacing: '-0.5px' }}>Bookzy</span>
+            <span style={{ fontSize: '1.5rem', fontWeight: 800, fontFamily: 'var(--font-title)', letterSpacing: '-0.5px' }}>Bookze</span>
           </Link>
 
           <nav style={{ display: 'flex', gap: '2rem', fontWeight: 550, color: '#64748b' }} className="desktop-nav">
@@ -213,7 +213,7 @@ export default function LandingPage() {
                   <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ffbd2e' }}></span>
                   <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#27c93f' }}></span>
                 </div>
-                <span>bookzy.in/priyas-salon</span>
+                <span>bookze.in/priyas-salon</span>
                 <span>📶 4G</span>
               </div>
 
@@ -266,7 +266,7 @@ export default function LandingPage() {
             {isHindi ? 'अपना बुकिंग स्टोर लिंक अभी बनाएं' : 'Create Your Booking Page Instantly'}
           </h2>
           <p style={{ color: '#64748b', marginBottom: '2.5rem' }}>
-            {isHindi ? '10 सेकंड में अपना स्टोर पेज लाइव करें और कस्टमर को व्हाट्सएप बुकिंग दें।' : 'Type your business name below to instantly generate your live, testable Bookzy storefront page.'}
+            {isHindi ? '10 सेकंड में अपना स्टोर पेज लाइव करें और कस्टमर को व्हाट्सएप बुकिंग दें।' : 'Type your business name below to instantly generate your live, testable Bookze storefront page.'}
           </p>
 
           <form onSubmit={handleGenerateLink} className="glass-card" style={{ padding: '2.5rem', background: 'white', boxShadow: 'var(--shadow-premium)', display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'left' }}>
@@ -400,7 +400,7 @@ export default function LandingPage() {
               </div>
               <h3 style={{ fontSize: '1.25rem' }}>{isHindi ? 'गूगल मैप्स लिंकिंग (GMB)' : 'Google Maps Integration'}</h3>
               <p style={{ color: '#64748b', fontSize: '0.95rem', lineHeight: 1.5 }}>
-                {isHindi ? 'अपने स्टोरफ्रंट लिंक को गूगल मैप्स प्रोफाइल से जोड़ें ताकि सर्च करने वाले सीधे बुक कर सकें।' : 'Integrate directly on Google My Business. Add your Bookzy booking button directly to Google Maps search listings.'}
+                {isHindi ? 'अपने स्टोरफ्रंट लिंक को गूगल मैप्स प्रोफाइल से जोड़ें ताकि सर्च करने वाले सीधे बुक कर सकें।' : 'Integrate directly on Google My Business. Add your Bookze booking button directly to Google Maps search listings.'}
               </p>
             </div>
 
@@ -414,7 +414,7 @@ export default function LandingPage() {
           <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
             <span className="badge badge-success" style={{ marginBottom: '0.75rem' }}>{isHindi ? 'प्लेटफॉर्म गैलरी' : 'Interactive Showcase'}</span>
             <h2 style={{ fontSize: '2.5rem', letterSpacing: '-0.75px' }}>
-              {isHindi ? 'बुकजी का लाइव इंटरफ़ेस देखें' : 'See How Bookzy Simplifies Booking'}
+              {isHindi ? 'बुकजी का लाइव इंटरफ़ेस देखें' : 'See How Bookze Simplifies Booking'}
             </h2>
             <p style={{ color: '#64748b', maxWidth: '600px', margin: '0.5rem auto 0 auto', fontSize: '0.95rem' }}>
               {isHindi ? 'कस्टमर बुकिंग पेज से लेकर मर्चेंट डैशबोर्ड तक, हर इंटरफ़ेस उपयोग करने में बेहद आसान है।' : 'Explore client booking, dashboard management, and real-time WhatsApp flow.'}
@@ -459,7 +459,7 @@ export default function LandingPage() {
                 {/* Client Booking View Mobile Mockup */}
                 <div className="glass-card" style={{ background: '#fff', border: '1px solid #e2e8f0', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', padding: '1.25rem', borderRadius: '24px' }}>
                   <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '0.5rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: '#64748b', marginBottom: '1rem' }}>
-                    <span>🌐 bookzy.in/priyas-salon</span>
+                    <span>🌐 bookze.in/priyas-salon</span>
                     <span style={{ fontWeight: 600 }}>● Live</span>
                   </div>
                   <div style={{ textAlign: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '1rem' }}>
@@ -513,7 +513,7 @@ export default function LandingPage() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '1rem', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <span style={{ height: '1.75rem', width: '1.75rem', background: 'linear-gradient(135deg, #6366f1, #a855f7)', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.85rem', fontWeight: 800 }}>B</span>
-                      <span style={{ fontSize: '1rem', fontWeight: 800 }}>Bookzy Partner Dashboard</span>
+                      <span style={{ fontSize: '1rem', fontWeight: 800 }}>Bookze Partner Dashboard</span>
                     </div>
                     <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                       <span className="badge badge-success">Priya's Salon</span>
@@ -581,7 +581,7 @@ export default function LandingPage() {
                   <div style={{ background: '#075e54', padding: '0.75rem 1rem', color: 'white', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <div style={{ width: '2.25rem', height: '2.25rem', borderRadius: '50%', background: '#fff', color: '#075e54', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>B</div>
                     <div>
-                      <div style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>Bookzy Assistant</div>
+                      <div style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>Bookze Assistant</div>
                       <div style={{ fontSize: '0.7rem', opacity: 0.85 }}>online</div>
                     </div>
                   </div>
@@ -603,7 +603,7 @@ export default function LandingPage() {
 
                     {/* Customer Response */}
                     <div style={{ background: '#dcf8c6', padding: '0.75rem', borderRadius: '8px', alignSelf: 'flex-end', maxWidth: '85%', boxShadow: '0 1px 1px rgba(0,0,0,0.1)' }}>
-                      I want to book "Haircut & Styling" on June 14, 2026 at 12:00 PM via Bookzy.
+                      I want to book "Haircut & Styling" on June 14, 2026 at 12:00 PM via Bookze.
                     </div>
 
                     {/* Bot Confirmation */}
@@ -681,7 +681,7 @@ export default function LandingPage() {
                   <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><CheckCircle size={16} style={{ color: '#6366f1' }} /> <strong>{isHindi ? 'व्हाट्सएप ऑटो-रिमाइंडर्स' : 'WhatsApp Auto-Reminders'}</strong></li>
                   <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><CheckCircle size={16} style={{ color: '#6366f1' }} /> {isHindi ? 'गूगल कैलेंडर सिंक' : 'Google Calendar Sync'}</li>
                   <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><CheckCircle size={16} style={{ color: '#6366f1' }} /> {isHindi ? 'अनलिमिटेड सर्विसेज' : 'Unlimited Services'}</li>
-                  <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><CheckCircle size={16} style={{ color: '#6366f1' }} /> {isHindi ? 'नो बुकजी ब्रांडिंग' : 'No Bookzy Branding'}</li>
+                  <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><CheckCircle size={16} style={{ color: '#6366f1' }} /> {isHindi ? 'नो बुकजी ब्रांडिंग' : 'No Bookze Branding'}</li>
                   <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><CheckCircle size={16} style={{ color: '#6366f1' }} /> {isHindi ? '3 स्टाफ मेंबर्स' : '3 Staff Member Profiles'}</li>
                 </ul>
               </div>
@@ -759,7 +759,7 @@ export default function LandingPage() {
                 {isHindi ? (
                   'हम मर्चेंट ऑनबोर्डिंग के दौरान आपके गूगल मैप्स प्रोफाइल पर बुकिंग बटन लिंक करने में मदद करते हैं। इससे मैप्स पर आपको खोजने वाले कस्टमर सीधे आपकी बुकजी प्रोफाइल खोलकर अप्वाइंटमेंट ले सकते हैं।'
                 ) : (
-                  'We help link your Bookzy storefront URL to your Google My Business / Maps profile. When local clients search for you (e.g. "salon near me"), they can click your Bookzy booking button directly in search results.'
+                  'We help link your Bookze storefront URL to your Google My Business / Maps profile. When local clients search for you (e.g. "salon near me"), they can click your Bookze booking button directly in search results.'
                 )}
               </p>
             </div>
@@ -788,7 +788,7 @@ export default function LandingPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', fontSize: '0.9rem', color: '#64748b' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Globe size={16} style={{ color: '#6366f1' }} />
-                  <span><strong>Bookzy Platform</strong> (Sole Proprietorship)</span>
+                  <span><strong>Bookze Platform</strong> (Sole Proprietorship)</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <HelpCircle size={16} style={{ color: '#6366f1' }} />
@@ -800,7 +800,7 @@ export default function LandingPage() {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Mail size={16} style={{ color: '#6366f1' }} />
-                  <a href="mailto:support@bookzy.in" className="text-indigo-600 hover:underline">support@bookzy.in</a>
+                  <a href="mailto:luvsharma105@gmail.com" className="text-indigo-600 hover:underline">luvsharma105@gmail.com</a>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Phone size={16} style={{ color: '#6366f1' }} />
@@ -846,7 +846,7 @@ export default function LandingPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ height: '2rem', width: '2rem', borderRadius: '6px', background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: '1rem' }}>B</span>
-              <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'white' }}>Bookzy</span>
+              <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'white' }}>Bookze</span>
             </div>
             <p style={{ fontSize: '0.9rem', lineHeight: 1.5 }}>
               {isHindi ? 'भारतीय लोकल सर्विस व्यवसायों को व्हाट्सएप की शक्ति से सशक्त बनाना।' : 'Empowering local service businesses across India with WhatsApp storefront automation.'}
@@ -882,7 +882,7 @@ export default function LandingPage() {
         </div>
 
         <div className="container" style={{ borderTop: '1px solid #1f2937', paddingTop: '2rem', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', fontSize: '0.85rem' }}>
-          <span>© 2026 Bookzy Platform. All Rights Reserved.</span>
+          <span>© 2026 Bookze Platform. All Rights Reserved.</span>
           <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
             <Link href="/privacy" className="hover-white">Privacy Policy</Link>
             <Link href="/terms" className="hover-white">Terms & Conditions</Link>

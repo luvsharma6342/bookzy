@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
 import { db, Business, Service, Booking } from '@/lib/db';
@@ -265,7 +265,7 @@ export default function ChatbotSimulator({
         
         {/* Encrypted Notice */}
         <div style={{ alignSelf: 'center', background: '#ffeec9', padding: '0.3rem 0.6rem', borderRadius: '6px', fontSize: '0.65rem', textAlign: 'center', border: '1px solid #f9ebbe', color: '#564c3c', maxWidth: '85%' }}>
-          🔒 {isHindi ? 'मैसेज एन्ड-टू-एन्ड एन्क्रिप्टेड हैं। बुकजी बॉट द्वारा संचालित।' : 'Messages are end-to-end encrypted. Secured by Bookzy Bot.'}
+          🔒 {isHindi ? 'मैसेज एन्ड-टू-एन्ड एन्क्रिप्टेड हैं। बुकजी बॉट द्वारा संचालित।' : 'Messages are end-to-end encrypted. Secured by Bookze Bot.'}
         </div>
 
         {messages.map(msg => (

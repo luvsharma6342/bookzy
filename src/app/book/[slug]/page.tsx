@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -291,8 +291,8 @@ export default function StorefrontBookingPage() {
     // Generate WhatsApp deep link message template
     const formattedDate = selectedDate.toLocaleDateString(isHindi ? 'hi-IN' : 'en-IN', { weekday: 'long', day: 'numeric', month: 'short' });
     const waMessage = isHindi
-      ? `नमस्ते, मैं Bookzy से *${selectedService.name}* बुक करना चाहता हूँ।\n\n📅 तारीख: ${formattedDate}\n⏰ समय: ${selectedTimeSlot}\n👤 नाम: ${customerName}\n📞 फोन: ${customerPhone}`
-      : `Hi, I want to book *${selectedService.name}* via Bookzy.\n\n📅 Date: ${formattedDate}\n⏰ Time: ${selectedTimeSlot}\n👤 Name: ${customerName}\n📞 Phone: ${customerPhone}`;
+      ? `नमस्ते, मैं Bookze से *${selectedService.name}* बुक करना चाहता हूँ।\n\n📅 तारीख: ${formattedDate}\n⏰ समय: ${selectedTimeSlot}\n👤 नाम: ${customerName}\n📞 फोन: ${customerPhone}`
+      : `Hi, I want to book *${selectedService.name}* via Bookze.\n\n📅 Date: ${formattedDate}\n⏰ Time: ${selectedTimeSlot}\n👤 Name: ${customerName}\n📞 Phone: ${customerPhone}`;
 
     // Target merchant's WhatsApp phone number
     const waLink = `https://wa.me/${business.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(waMessage)}`;
@@ -324,7 +324,7 @@ export default function StorefrontBookingPage() {
         {/* Back Link to platform page */}
         <div style={{ position: 'absolute', top: '1rem', left: '1rem', zIndex: 10 }}>
           <Link href="/" style={{ background: 'rgba(255,255,255,0.25)', backdropFilter: 'blur(4px)', color: 'white', padding: '0.4rem 0.8rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-            ← Bookzy Home
+            ← Bookze Home
           </Link>
         </div>
       </div>
