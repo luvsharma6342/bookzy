@@ -138,7 +138,7 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       <section style={{ padding: '5rem 0 4rem 0', position: 'relative', overflow: 'hidden', background: 'radial-gradient(circle at 80% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 50%)' }}>
-        <div className="container" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '3rem', alignItems: 'center' }}>
+        <div className="container hero-grid">
 
           {/* Hero Left Content */}
           <motion.div
@@ -547,7 +547,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer style={{ background: '#090d16', color: '#94a3b8', padding: '4rem 0 2rem 0', borderTop: '1px solid #1f2937', marginTop: 'auto' }}>
-        <div className="container" style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr', gap: '3rem', marginBottom: '3rem' }}>
+        <div className="container footer-grid" style={{ marginBottom: '3rem' }}>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -590,6 +590,17 @@ export default function LandingPage() {
 
       {/* Internal helper styles */}
       <style jsx>{`
+        .hero-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 2rem;
+          align-items: center;
+        }
+        .footer-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 2rem;
+        }
         .hover-link:hover {
           color: #6366f1;
           transition: color 0.2s ease;
@@ -597,6 +608,16 @@ export default function LandingPage() {
         .hover-white:hover {
           color: white;
           transition: color 0.2s ease;
+        }
+        @media (min-width: 768px) {
+          .hero-grid {
+            grid-template-columns: 1.2fr 1fr;
+            gap: 3rem;
+          }
+          .footer-grid {
+            grid-template-columns: 1.5fr 1fr 1fr;
+            gap: 3rem;
+          }
         }
         @media (max-width: 768px) {
           .desktop-nav {

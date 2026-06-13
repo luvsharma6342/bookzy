@@ -570,7 +570,7 @@ export default function MerchantDashboard() {
         </div>
 
         {/* Navigation Tabs */}
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', flex: 1 }}>
+        <nav className="dashboard-nav" style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', flex: 1 }}>
           <button 
             onClick={() => setActiveView('analytics')} 
             className={`btn btn-sm ${activeView === 'analytics' ? 'btn-primary' : 'btn-outline'}`}
@@ -752,7 +752,7 @@ export default function MerchantDashboard() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
             
             {/* KPI Cards Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.25rem' }}>
+            <div className="kpi-grid">
               
               <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <div style={{ height: '2.5rem', width: '2.5rem', borderRadius: '8px', background: 'rgba(99, 102, 241, 0.15)', color: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1510,7 +1510,21 @@ export default function MerchantDashboard() {
             width: 100% !important;
             border-right: none !important;
             border-bottom: 1px solid var(--border);
-            padding: 1rem !important;
+            padding: 1.25rem !important;
+          }
+          .dashboard-nav {
+            flex-direction: row !important;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+            white-space: nowrap;
+            gap: 0.5rem !important;
+          }
+          .dashboard-nav button {
+            flex-shrink: 0;
+            width: auto !important;
+          }
+          main {
+            padding: 1.25rem !important;
           }
         }
       `}</style>

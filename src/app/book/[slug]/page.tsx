@@ -333,7 +333,7 @@ export default function StorefrontBookingPage() {
       <div className="container" style={{ marginTop: '-4rem', position: 'relative', zIndex: 5, maxWidth: '800px', marginBottom: '2rem' }}>
         <div className="glass-card" style={{ background: 'white', display: 'flex', flexDirection: 'column', gap: '1.25rem', boxShadow: 'var(--shadow-lg)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
               <div style={{ width: '5rem', height: '5rem', borderRadius: '12px', background: 'linear-gradient(135deg, #a855f7, #6366f1)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '2rem', boxShadow: 'var(--shadow-md)' }}>
                 {business.name.substring(0, 2).toUpperCase()}
               </div>
@@ -363,7 +363,7 @@ export default function StorefrontBookingPage() {
             {business.description}
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '1rem', borderTop: '1px solid #f1f5f9', paddingTop: '1rem', fontSize: '0.85rem', color: '#64748b' }}>
+          <div className="storefront-info-grid" style={{ borderTop: '1px solid #f1f5f9', paddingTop: '1rem', fontSize: '0.85rem', color: '#64748b' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <MapPin size={16} style={{ color: '#6366f1' }} />
               <span>{business.city}</span>
@@ -377,7 +377,7 @@ export default function StorefrontBookingPage() {
       </div>
 
       {/* Main Core Layout: Services & Booking Wizard */}
-      <main className="container" style={{ maxWidth: '800px', display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: '1.5rem', paddingBottom: '6rem' }}>
+      <main className="container storefront-layout" style={{ maxWidth: '800px', paddingBottom: '6rem' }}>
         
         {/* Left Column: Service Listing */}
         <section style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }} className="storefront-column">
@@ -759,14 +759,30 @@ export default function StorefrontBookingPage() {
       </AnimatePresence>
 
       <style jsx>{`
-        @media (max-width: 768px) {
-          .storefront-column {
-            grid-column: span 2;
+        .storefront-layout {
+          display: grid;
+          grid-template-columns: 1.1fr 1fr;
+          gap: 1.5rem;
+        }
+        .storefront-info-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 0.75rem;
+        }
+        @media (min-width: 640px) {
+          .storefront-info-grid {
+            grid-template-columns: 1.2fr 1fr;
+            gap: 1rem;
           }
-          main {
+        }
+        @media (max-width: 768px) {
+          .storefront-layout {
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
+          }
+          .storefront-column {
+            grid-column: span 2;
           }
         }
       `}</style>
