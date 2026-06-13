@@ -1,0 +1,152 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String    @id @default(uuid())
+  name          String
+  email         String    @unique
+  emailVerified Boolean
+  image         String?
+  createdAt     DateTime
+  updatedAt     DateTime
+  sessions      Session[]
+  accounts      Account[]
+  businesses    Business[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
+}
+
+model Business {
+  id           String           @id @default(uuid())
+  ownerId      String?
+  owner        User?            @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  name         String
+  slug         String           @unique
+  category     String
+  phone        String
+  description  String
+  city         String
+  logoUrl      String?
+  coverUrl     String?
+  workingHours Json             // Stores structured hours: { monday: { open: "10:00", close: "20:00", closed: false }, ... }
+  plan         String           @default("free") // "free" | "growth" | "pro"
+  reviewsCount Int              @default(0)
+  rating       Float            @default(5.0)
+  
+  services     Service[]
+  staff        Staff[]
+  bookings     Booking[]
+  analytics    AnalyticsEvent[]
+
+  @@map("business")
+}
+
+model Service {
+  id          String    @id @default(uuid())
+  businessId  String
+  business    Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name        String
+  price       Float
+  duration    Int       // in minutes
+  description String
+  category    String
+  active      Boolean   @default(true)
+  photoUrl    String?
+  
+  bookings    Booking[]
+
+  @@map("service")
+}
+
+model Staff {
+  id          String    @id @default(uuid())
+  businessId  String
+  business    Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name        String
+  role        String
+  photoUrl    String?
+  rating      Float     @default(5.0)
+  
+  bookings    Booking[]
+
+  @@map("staff")
+}
+
+model Booking {
+  id            String    @id @default(uuid())
+  businessId    String
+  business      Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  serviceId     String
+  service       Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  staffId       String?
+  staff         Staff?    @relation(fields: [staffId], references: [id], onDelete: SetNull)
+  customerName  String
+  customerPhone String
+  bookingTime   DateTime
+  price         Float
+  status        String    @default("pending") // "pending" | "confirmed" | "completed" | "cancelled" | "no_show"
+  bookingSource String    @default("whatsapp_link") // "whatsapp_link" | "chatbot" | "manual"
+  notes         String?
+  createdAt     DateTime  @default(now())
+
+  @@map("booking")
+}
+
+model AnalyticsEvent {
+  id         String   @id @default(uuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  eventType  String   // "page_view" | "book_now_click" | "booking_created"
+  timestamp  DateTime @default(now())
+
+  @@map("analytics_event")
+}
