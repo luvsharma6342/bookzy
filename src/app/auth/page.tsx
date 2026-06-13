@@ -12,7 +12,7 @@ function AuthForm() {
   const bizName = searchParams.get("bizName");
   const category = searchParams.get("category");
 
-  const [isLogin, setIsLogin] = useState(true);
+  const [isLogin, setIsLogin] = useState(!bizName);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
