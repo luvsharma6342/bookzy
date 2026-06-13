@@ -56,6 +56,17 @@ export default function StorefrontBookingPage() {
   // Chatbot visibility
   const [showChatbot, setShowChatbot] = useState(false);
 
+  // WhatsApp redirection confirmation
+  const [showWAConfirmation, setShowWAConfirmation] = useState(false);
+  const [pendingBookingData, setPendingBookingData] = useState<{
+    bookingTime: string;
+    customerName: string;
+    customerPhone: string;
+    price: number;
+    serviceId: string;
+    staffId: string | null;
+  } | null>(null);
+
   // Log page view analytic once
   useEffect(() => {
     const loadStorefrontData = async () => {
@@ -194,21 +205,8 @@ export default function StorefrontBookingPage() {
     });
   };
 
-  const handleWhatsAppBooking = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedService || !selectedDate || !selectedTimeSlot || !customerName.trim() || !customerPhone.trim()) {
-      alert('Please fill all details before booking.');
-      return;
-    }
-
-    // Combine Date & Time into single Date object
-    const bookingTimeObj = new Date(selectedDate);
-    const [hoursStr, minutesPart] = selectedTimeSlot.split(':');
-    let hours = parseInt(hoursStr);
-    const minutes = parseInt(minutesPart.substring(0, 2));
-    if (selectedTimeSlot.toLowerCase().includes('pm') && hours < 12) hours += 12;
-    if (selectedTimeSlot.toLowerCase().includes('am') && hours === 12) hours = 0;
-    bookingTimeObj.setHours(hours, minutes, 0, 0);
+  const confirmWhatsAppBooking = async () => {
+    if (!pendingBookingData || !selectedDate || !selectedTimeSlot || !selectedService) return;
 
     try {
       // Save booking in Postgres DB via API
@@ -217,12 +215,12 @@ export default function StorefrontBookingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           businessId: business.id,
-          serviceId: selectedService.id,
-          staffId: selectedStaff?.id || null,
-          customerName,
-          customerPhone,
-          bookingTime: bookingTimeObj.toISOString(),
-          price: selectedService.price,
+          serviceId: pendingBookingData.serviceId,
+          staffId: pendingBookingData.staffId,
+          customerName: pendingBookingData.customerName,
+          customerPhone: pendingBookingData.customerPhone,
+          bookingTime: pendingBookingData.bookingTime,
+          price: pendingBookingData.price,
           bookingSource: 'whatsapp_link',
         })
       });
@@ -241,15 +239,6 @@ export default function StorefrontBookingPage() {
         })
       });
 
-      // Generate WhatsApp deep link message template
-      const formattedDate = selectedDate.toLocaleDateString(isHindi ? 'hi-IN' : 'en-IN', { weekday: 'long', day: 'numeric', month: 'short' });
-      const waMessage = isHindi
-        ? `नमस्ते, मैं Bookzy से *${selectedService.name}* बुक करना चाहता हूँ।\n\n📅 तारीख: ${formattedDate}\n⏰ समय: ${selectedTimeSlot}\n👤 नाम: ${customerName}\n📞 फोन: ${customerPhone}`
-        : `Hi, I want to book *${selectedService.name}* via Bookzy.\n\n📅 Date: ${formattedDate}\n⏰ Time: ${selectedTimeSlot}\n👤 Name: ${customerName}\n📞 Phone: ${customerPhone}`;
-
-      // Target merchant's WhatsApp phone number
-      const waLink = `https://wa.me/${business.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(waMessage)}`;
-
       // Confetti celebration
       confetti({
         particleCount: 80,
@@ -257,21 +246,62 @@ export default function StorefrontBookingPage() {
         origin: { y: 0.8 }
       });
 
-      // Open WhatsApp link in new window
-      window.open(waLink, '_blank');
-      
       // Refresh storefront state
       refreshBookings();
       
-      // Reset selection wizard
+      // Reset selection wizard & confirmation state
       setSelectedService(null);
       setSelectedTimeSlot('');
       setCustomerName('');
       setCustomerPhone('');
+      setPendingBookingData(null);
+      setShowWAConfirmation(false);
     } catch (err) {
       console.error(err);
       alert("Failed to submit booking request. Please try again.");
     }
+  };
+
+  const handleWhatsAppBooking = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedService || !selectedDate || !selectedTimeSlot || !customerName.trim() || !customerPhone.trim()) {
+      alert('Please fill all details before booking.');
+      return;
+    }
+
+    // Combine Date & Time into single Date object
+    const bookingTimeObj = new Date(selectedDate);
+    const [hoursStr, minutesPart] = selectedTimeSlot.split(':');
+    let hours = parseInt(hoursStr);
+    const minutes = parseInt(minutesPart.substring(0, 2));
+    if (selectedTimeSlot.toLowerCase().includes('pm') && hours < 12) hours += 12;
+    if (selectedTimeSlot.toLowerCase().includes('am') && hours === 12) hours = 0;
+    bookingTimeObj.setHours(hours, minutes, 0, 0);
+
+    // Save pending details to state
+    setPendingBookingData({
+      bookingTime: bookingTimeObj.toISOString(),
+      customerName,
+      customerPhone,
+      price: selectedService.price,
+      serviceId: selectedService.id,
+      staffId: selectedStaff?.id || null,
+    });
+
+    // Generate WhatsApp deep link message template
+    const formattedDate = selectedDate.toLocaleDateString(isHindi ? 'hi-IN' : 'en-IN', { weekday: 'long', day: 'numeric', month: 'short' });
+    const waMessage = isHindi
+      ? `नमस्ते, मैं Bookzy से *${selectedService.name}* बुक करना चाहता हूँ।\n\n📅 तारीख: ${formattedDate}\n⏰ समय: ${selectedTimeSlot}\n👤 नाम: ${customerName}\n📞 फोन: ${customerPhone}`
+      : `Hi, I want to book *${selectedService.name}* via Bookzy.\n\n📅 Date: ${formattedDate}\n⏰ Time: ${selectedTimeSlot}\n👤 Name: ${customerName}\n📞 Phone: ${customerPhone}`;
+
+    // Target merchant's WhatsApp phone number
+    const waLink = `https://wa.me/${business.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(waMessage)}`;
+
+    // Open WhatsApp link in new window
+    window.open(waLink, '_blank');
+
+    // Show the confirmation popup
+    setShowWAConfirmation(true);
   };
 
   return (
@@ -646,6 +676,84 @@ export default function StorefrontBookingPage() {
                 setTimeout(() => setShowChatbot(false), 3000);
               }}
             />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* WhatsApp Confirmation Modal */}
+      <AnimatePresence>
+        {showWAConfirmation && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{ 
+              position: 'fixed', 
+              top: 0, 
+              left: 0, 
+              width: '100vw', 
+              height: '100vh', 
+              background: 'rgba(0,0,0,0.6)', 
+              zIndex: 1000, 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              padding: '1.5rem'
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="glass-card"
+              style={{ 
+                background: 'white', 
+                maxWidth: '480px', 
+                width: '100%', 
+                padding: '2rem', 
+                boxShadow: 'var(--shadow-premium)',
+                borderRadius: '16px',
+                textAlign: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1.25rem'
+              }}
+            >
+              <div style={{ width: '4rem', height: '4rem', borderRadius: '50%', background: 'rgba(37, 211, 102, 0.1)', color: '#25d366', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                <MessageSquare size={32} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 800 }}>
+                  {isHindi ? 'व्हाट्सएप बुकिंग की पुष्टि करें' : 'Confirm WhatsApp Booking'}
+                </h3>
+                <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.5rem', lineHeight: 1.5 }}>
+                  {isHindi 
+                    ? 'हमने नए टैब में व्हाट्सएप खोल दिया है। क्या आपने मर्चेंट को बुकिंग मैसेज भेज दिया है?' 
+                    : 'We have opened WhatsApp in a new tab. Did you click send to deliver your booking details to the merchant?'}
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+                <button 
+                  onClick={confirmWhatsAppBooking}
+                  className="btn btn-whatsapp"
+                  style={{ width: '100%', padding: '0.85rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', fontWeight: 700 }}
+                >
+                  <Check size={18} />
+                  <span>{isHindi ? 'हाँ, मैंने मैसेज भेज दिया है' : 'Yes, I sent the message'}</span>
+                </button>
+                <button 
+                  onClick={() => {
+                    setShowWAConfirmation(false);
+                    setPendingBookingData(null);
+                  }}
+                  className="btn btn-outline"
+                  style={{ width: '100%', padding: '0.85rem', color: '#64748b', borderColor: '#cbd5e1' }}
+                >
+                  <span>{isHindi ? 'नहीं, बुकिंग रद्द करें' : "No, cancel booking"}</span>
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

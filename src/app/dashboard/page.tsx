@@ -34,7 +34,8 @@ import {
   Sparkles,
   RefreshCw,
   BellRing,
-  Star
+  Star,
+  CheckCircle
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -84,6 +85,14 @@ export default function MerchantDashboard() {
   const [wabaConnected, setWabaConnected] = useState(true);
   const [gmbLinked, setGmbLinked] = useState(true);
   const [simulatedReminderText, setSimulatedReminderText] = useState<string | null>(null);
+
+  // Toast notifications
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
 
   // Auth Protection Mount check
   useEffect(() => {
@@ -692,6 +701,35 @@ export default function MerchantDashboard() {
             >
               <BellRing size={20} />
               <div style={{ fontSize: '0.85rem', fontWeight: 550 }}>{simulatedReminderText}</div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Floating toast notification */}
+        <AnimatePresence>
+          {toast && (
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              style={{ 
+                position: 'fixed', 
+                top: '1.5rem', 
+                right: '1.5rem', 
+                zIndex: 1000, 
+                background: toast.type === 'success' ? '#10b981' : '#ef4444', 
+                color: 'white', 
+                padding: '1rem 1.5rem', 
+                borderRadius: '8px', 
+                boxShadow: '0 10px 15px -3px rgba(0,0,0,0.3)', 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.75rem', 
+                maxWidth: '450px' 
+              }}
+            >
+              {toast.type === 'success' ? <CheckCircle size={18} /> : <X size={18} />}
+              <div style={{ fontSize: '0.85rem', fontWeight: 550 }}>{toast.message}</div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -1373,10 +1411,10 @@ export default function MerchantDashboard() {
                   if (res.ok) {
                     const updated = await res.json();
                     setBusiness(updated);
-                    alert("Business settings updated successfully!");
+                    showToast("Business settings updated successfully!", "success");
                     reloadData(business.id);
                   } else {
-                    alert("Failed to update business settings.");
+                    showToast("Failed to update business settings.", "error");
                   }
                 } catch (err) {
                   console.error(err);
