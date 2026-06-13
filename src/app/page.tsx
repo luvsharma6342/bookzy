@@ -301,7 +301,7 @@ export default function LandingPage() {
               <span>
                 {isHindi ? 'आपका स्टोर यूआरएल होगा:' : 'Your direct booking storefront URL will be:'}{' '}
                 <strong>
-                  bookzy.in/book/{demoBizName ? demoBizName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') : 'your-brand'}
+                  bookze.vercel.app/book/{demoBizName ? demoBizName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') : 'your-brand'}
                 </strong>
               </span>
             </div>
