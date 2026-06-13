@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { authClient } from '@/lib/auth-client';
+import { getEffectivePlan, isPaidPlan, isProPlan } from '@/lib/planOverride';
 import type { 
   Business, 
   Service, 
@@ -308,7 +309,7 @@ export default function MerchantDashboard() {
         reloadData(business.id);
 
         // If marked no-show on Growth/Pro plan, auto trigger simulated notification mockup
-        if (newStatus === 'no_show' && business.plan !== 'free') {
+        if (newStatus === 'no_show' && isPaidPlan(business.plan)) {
           const msg = `Hi ${booking.customerName}, we missed you for your appointment today. Want to reschedule? Reply YES to find a new slot.`;
           setSimulatedReminderText(`📲 SMS Sent to ${booking.customerName} (${booking.customerPhone}): "${msg}"`);
           setTimeout(() => setSimulatedReminderText(null), 7000);
@@ -651,11 +652,11 @@ export default function MerchantDashboard() {
             onClick={() => setActiveView('whatsapp')} 
             className={`btn btn-sm ${activeView === 'whatsapp' ? 'btn-primary' : 'btn-outline'}`}
             style={{ justifyContent: 'flex-start', width: '100%', border: 'none' }}
-            disabled={business.plan === 'free'}
+            disabled={!isPaidPlan(business.plan)}
           >
             <MessageSquare size={18} />
             <span>WhatsApp Automation</span>
-            {business.plan === 'free' && (
+            {!isPaidPlan(business.plan) && (
               <span style={{ background: '#ef4444', color: 'white', fontSize: '0.6rem', padding: '1px 4px', borderRadius: '4px', marginLeft: 'auto', fontWeight: 700 }}>PRO</span>
             )}
           </button>
@@ -664,11 +665,11 @@ export default function MerchantDashboard() {
             onClick={() => setActiveView('staff')} 
             className={`btn btn-sm ${activeView === 'staff' ? 'btn-primary' : 'btn-outline'}`}
             style={{ justifyContent: 'flex-start', width: '100%', border: 'none' }}
-            disabled={business.plan === 'free'}
+            disabled={!isPaidPlan(business.plan)}
           >
             <Users size={18} />
             <span>Staff Schedules</span>
-            {business.plan === 'free' && (
+            {!isPaidPlan(business.plan) && (
               <span style={{ background: '#ef4444', color: 'white', fontSize: '0.6rem', padding: '1px 4px', borderRadius: '4px', marginLeft: 'auto', fontWeight: 700 }}>PRO</span>
             )}
           </button>
@@ -688,14 +689,14 @@ export default function MerchantDashboard() {
           <div style={{ background: 'rgba(99,102,241,0.08)', borderRadius: '8px', padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '0.75rem', opacity: 0.7, fontWeight: 600 }}>Current Plan</span>
-              <span className={`badge ${business.plan === 'pro' ? 'badge-success' : (business.plan === 'growth' ? 'badge-primary' : 'badge-muted')}`} style={{ textTransform: 'uppercase', fontSize: '0.65rem' }}>
-                {business.plan}
+              <span className={`badge ${getEffectivePlan(business.plan) === 'pro' ? 'badge-success' : (getEffectivePlan(business.plan) === 'growth' ? 'badge-primary' : 'badge-muted')}`} style={{ textTransform: 'uppercase', fontSize: '0.65rem' }}>
+                {getEffectivePlan(business.plan)}
               </span>
             </div>
             {business.planStatus === 'cancelled' && (
               <span style={{ fontSize: '0.7rem', color: '#f59e0b' }}>⚠ Cancels at period end</span>
             )}
-            {business.plan === 'free' && (
+            {!isPaidPlan(business.plan) && (
               <button
                 onClick={() => setActiveView('settings')}
                 className="btn btn-primary btn-sm"
@@ -1011,7 +1012,7 @@ export default function MerchantDashboard() {
                                   <button onClick={() => handleUpdateBookingStatus(bk, 'no_show')} className="btn btn-secondary btn-sm" style={{ padding: '0.25rem 0.5rem', fontSize: '0.7rem', border: 'none', color: '#d97706' }}>
                                     ⚠️ No-show
                                   </button>
-                                  {business.plan !== 'free' && (
+                                  {isPaidPlan(business.plan) && (
                                     <button onClick={() => handleSimulateReminder(bk)} className="btn btn-secondary btn-sm" style={{ padding: '0.25rem 0.5rem', fontSize: '0.7rem', background: '#25d366', color: 'white', border: 'none' }} title="Send Manual Reminder">
                                       🔔 Remind
                                     </button>
@@ -1020,7 +1021,7 @@ export default function MerchantDashboard() {
                               )}
 
                               {/* Completed review trigger simulation */}
-                              {bk.status === 'completed' && business.plan !== 'free' && (
+                              {bk.status === 'completed' && isPaidPlan(business.plan) && (
                                 <button onClick={() => handleSimulateReviewRequest(bk)} className="btn btn-secondary btn-sm" style={{ padding: '0.25rem 0.5rem', fontSize: '0.7rem', background: '#eab308', color: 'white', border: 'none' }} title="Ask for Google Review">
                                   ⭐ Ask Review
                                 </button>
@@ -1442,12 +1443,13 @@ export default function MerchantDashboard() {
                   <span style={{ fontSize: '0.8rem', opacity: 0.6, fontWeight: 600 }}>ACTIVE PLAN</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <span style={{
-                      fontSize: '1.5rem', fontWeight: 800,
-                      color: business.plan === 'pro' ? '#a855f7' : business.plan === 'growth' ? '#6366f1' : '#64748b'
-                    }}>
-                      {business.plan.charAt(0).toUpperCase() + business.plan.slice(1)}
+                       fontSize: '1.5rem', fontWeight: 800,
+                       color: getEffectivePlan(business.plan) === 'pro' ? '#a855f7' : getEffectivePlan(business.plan) === 'growth' ? '#6366f1' : '#64748b'
+                      }}
+                    >
+                      {getEffectivePlan(business.plan).charAt(0).toUpperCase() + getEffectivePlan(business.plan).slice(1)}
                     </span>
-                    {business.plan !== 'free' && (
+                    {isPaidPlan(business.plan) && (
                       <span className={`badge ${
                         business.planStatus === 'cancelled' ? 'badge-warning' :
                         business.planStatus === 'past_due' ? 'badge-danger' : 'badge-success'
@@ -1457,13 +1459,13 @@ export default function MerchantDashboard() {
                       </span>
                     )}
                   </div>
-                  {business.plan !== 'free' && business.planExpiresAt && (
+                  {isPaidPlan(business.plan) && business.planExpiresAt && (
                     <span style={{ fontSize: '0.78rem', opacity: 0.65 }}>
                       {business.planStatus === 'cancelled' ? 'Access until' : 'Renews on'}{' '}
                       <strong>{new Date(business.planExpiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>
                     </span>
                   )}
-                  {business.plan === 'free' && (
+                  {!isPaidPlan(business.plan) && (
                     <span style={{ fontSize: '0.78rem', opacity: 0.6 }}>Free forever · Upgrade to unlock automation</span>
                   )}
                 </div>
@@ -1471,22 +1473,22 @@ export default function MerchantDashboard() {
                 {/* Plan price badge */}
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--primary)' }}>
-                    {business.plan === 'free' ? '₹0' : business.plan === 'growth' ? '₹499' : '₹1,499'}
+                    {getEffectivePlan(business.plan) === 'free' ? '₹0' : getEffectivePlan(business.plan) === 'growth' ? '₹499' : '₹1,499'}
                   </div>
-                  {business.plan !== 'free' && (
+                  {isPaidPlan(business.plan) && (
                     <div style={{ fontSize: '0.75rem', opacity: 0.6 }}>per month</div>
                   )}
                 </div>
               </div>
 
               {/* Upgrade Options */}
-              {business.plan !== 'pro' && (
+              {!isProPlan(business.plan) && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   <span style={{ fontSize: '0.8rem', fontWeight: 700, opacity: 0.7 }}>UPGRADE YOUR PLAN</span>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
 
                     {/* Growth Plan Card */}
-                    {business.plan !== 'growth' && (
+                    {getEffectivePlan(business.plan) !== 'growth' && (
                       <div style={{ border: '2px solid #6366f1', borderRadius: '12px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span style={{ fontWeight: 700, color: '#6366f1' }}>Growth Plan</span>
@@ -1544,7 +1546,7 @@ export default function MerchantDashboard() {
               )}
 
               {/* Cancel Subscription */}
-              {business.plan !== 'free' && business.razorpaySubscriptionId && business.planStatus === 'active' && (
+              {isPaidPlan(business.plan) && business.razorpaySubscriptionId && business.planStatus === 'active' && (
                 <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
                   <div style={{ fontSize: '0.8rem', opacity: 0.6 }}>
                     <ShieldCheck size={14} style={{ display: 'inline', marginRight: '4px', color: '#10b981' }} />

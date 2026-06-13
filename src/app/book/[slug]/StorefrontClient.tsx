@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import ChatbotSimulator from '@/components/ChatbotSimulator';
 import confetti from 'canvas-confetti';
+import { isProPlan } from '@/lib/planOverride';
 
 interface Props {
   business: Business;
@@ -431,7 +432,7 @@ export default function StorefrontClient({
       </main>
 
       {/* Pro Plan Chatbot */}
-      {business.plan === 'pro' && (
+      {isProPlan(business.plan) && (
         <div style={{ position: 'fixed', bottom: '2rem', left: '2rem', zIndex: 100 }}>
           <button onClick={() => setShowChatbot(true)} className="btn btn-primary" style={{ borderRadius: '50px', padding: '0.8rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: 'var(--shadow-premium)' }}>
             <span style={{ display: 'inline-block', height: '8px', width: '8px', background: '#10b981', borderRadius: '50%', animation: 'pulse 1.2s infinite' }}></span>
