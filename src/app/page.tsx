@@ -18,7 +18,10 @@ import {
   Bell,
   HelpCircle,
   TrendingUp,
-  Languages
+  Languages,
+  Mail,
+  Phone,
+  MapPin
 } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
 
@@ -28,6 +31,7 @@ export default function LandingPage() {
   const [demoCategory, setDemoCategory] = useState('Salons & Beauty Parlours');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isHindi, setIsHindi] = useState(false);
+  const [screenshotTab, setScreenshotTab] = useState<'storefront' | 'dashboard' | 'whatsapp'>('storefront');
   const { data: session } = authClient.useSession();
 
   const handleGenerateLink = async (e: React.FormEvent) => {
@@ -404,6 +408,224 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Interactive Showcase / Screenshots Section */}
+      <section id="screenshots" style={{ padding: '6rem 0', background: 'linear-gradient(180deg, #fff 0%, #f1f5f9 100%)', borderTop: '1px solid #e2e8f0' }}>
+        <div className="container">
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <span className="badge badge-success" style={{ marginBottom: '0.75rem' }}>{isHindi ? 'प्लेटफॉर्म गैलरी' : 'Interactive Showcase'}</span>
+            <h2 style={{ fontSize: '2.5rem', letterSpacing: '-0.75px' }}>
+              {isHindi ? 'बुकजी का लाइव इंटरफ़ेस देखें' : 'See How Bookzy Simplifies Booking'}
+            </h2>
+            <p style={{ color: '#64748b', maxWidth: '600px', margin: '0.5rem auto 0 auto', fontSize: '0.95rem' }}>
+              {isHindi ? 'कस्टमर बुकिंग पेज से लेकर मर्चेंट डैशबोर्ड तक, हर इंटरफ़ेस उपयोग करने में बेहद आसान है।' : 'Explore client booking, dashboard management, and real-time WhatsApp flow.'}
+            </p>
+          </div>
+
+          {/* Tabs Control */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem', marginBottom: '2.5rem', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => setScreenshotTab('storefront')}
+              className={`btn btn-sm ${screenshotTab === 'storefront' ? 'btn-primary' : 'btn-outline'}`}
+              style={{ padding: '0.6rem 1.25rem', borderRadius: '9999px', fontSize: '0.9rem', fontWeight: 600 }}
+            >
+              📱 {isHindi ? 'कस्टमर बुकिंग' : 'Client Booking Flow'}
+            </button>
+            <button
+              onClick={() => setScreenshotTab('dashboard')}
+              className={`btn btn-sm ${screenshotTab === 'dashboard' ? 'btn-primary' : 'btn-outline'}`}
+              style={{ padding: '0.6rem 1.25rem', borderRadius: '9999px', fontSize: '0.9rem', fontWeight: 600 }}
+            >
+              📊 {isHindi ? 'मर्चेंट डैशबोर्ड' : 'Merchant Dashboard'}
+            </button>
+            <button
+              onClick={() => setScreenshotTab('whatsapp')}
+              className={`btn btn-sm ${screenshotTab === 'whatsapp' ? 'btn-primary' : 'btn-outline'}`}
+              style={{ padding: '0.6rem 1.25rem', borderRadius: '9999px', fontSize: '0.9rem', fontWeight: 600 }}
+            >
+              💬 {isHindi ? 'व्हाट्सएप चैट' : 'WhatsApp Notifications'}
+            </button>
+          </div>
+
+          {/* Active Tab Screen Content */}
+          <div style={{ display: 'flex', justifyContent: 'center', minHeight: '400px' }}>
+            {screenshotTab === 'storefront' && (
+              <motion.div
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                transition={{ duration: 0.3 }}
+                style={{ width: '100%', maxWidth: '380px' }}
+              >
+                {/* Client Booking View Mobile Mockup */}
+                <div className="glass-card" style={{ background: '#fff', border: '1px solid #e2e8f0', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', padding: '1.25rem', borderRadius: '24px' }}>
+                  <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '0.5rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: '#64748b', marginBottom: '1rem' }}>
+                    <span>🌐 bookzy.in/priyas-salon</span>
+                    <span style={{ fontWeight: 600 }}>● Live</span>
+                  </div>
+                  <div style={{ textAlign: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '1rem' }}>
+                    <div style={{ width: '3.5rem', height: '3.5rem', background: 'linear-gradient(135deg, #6366f1, #a855f7)', borderRadius: '50%', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800 }}>PS</div>
+                    <h4 style={{ marginTop: '0.5rem', fontWeight: 800, fontSize: '1.1rem' }}>Priya's Premium Salon</h4>
+                    <p style={{ fontSize: '0.75rem', color: '#64748b' }}>Sector 18, Noida • ★ 4.9 (120 reviews)</p>
+                  </div>
+                  <div style={{ marginTop: '1rem' }}>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>{isHindi ? 'हमारी सेवाएं' : 'Services Catalogue'}</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.6rem', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#f8fafc', alignItems: 'center' }}>
+                        <div>
+                          <div style={{ fontSize: '0.85rem', fontWeight: 700 }}>Haircut & Hair Spa</div>
+                          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>₹499 · 45m</span>
+                        </div>
+                        <span style={{ fontSize: '0.75rem', color: '#6366f1', fontWeight: 700 }}>✓ Selected</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.6rem', border: '1px solid #f1f5f9', borderRadius: '8px', opacity: 0.75, alignItems: 'center' }}>
+                        <div>
+                          <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>Facial & Clean-up</div>
+                          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>₹799 · 60m</span>
+                        </div>
+                        <button style={{ fontSize: '0.75rem', border: '1px solid #cbd5e1', padding: '0.2rem 0.5rem', borderRadius: '4px', background: 'white' }}>+ Add</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ marginTop: '1rem', background: '#e0e7ff', padding: '0.75rem', borderRadius: '12px' }}>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#4338ca', marginBottom: '0.25rem' }}>📅 {isHindi ? 'स्लॉट चुनें' : 'Choose Appointment Slot'}</div>
+                    <div style={{ display: 'flex', gap: '0.25rem' }}>
+                      <div style={{ flex: 1, padding: '0.35rem', background: '#fff', borderRadius: '6px', textAlign: 'center', fontSize: '0.7rem', border: '1px solid #c7d2fe', fontWeight: 600, color: '#4338ca' }}>Tomorrow, 11 AM</div>
+                      <div style={{ flex: 1, padding: '0.35rem', background: '#4338ca', borderRadius: '6px', color: '#fff', textAlign: 'center', fontSize: '0.7rem', fontWeight: 600 }}>Tomorrow, 12 PM</div>
+                    </div>
+                  </div>
+                  <button className="btn btn-whatsapp" style={{ width: '100%', padding: '0.6rem', fontSize: '0.85rem', display: 'flex', justifyContent: 'center', gap: '0.4rem', marginTop: '1rem' }}>
+                    <MessageSquare size={14} /> {isHindi ? 'व्हाट्सएप पर बुक करें' : 'Confirm Bookings on WhatsApp'}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {screenshotTab === 'dashboard' && (
+              <motion.div
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                transition={{ duration: 0.3 }}
+                style={{ width: '100%', maxWidth: '800px' }}
+              >
+                {/* Dashboard Desktop View Mockup */}
+                <div className="glass-card" style={{ background: '#fff', border: '1px solid #e2e8f0', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', padding: '1.5rem', borderRadius: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '1rem', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span style={{ height: '1.75rem', width: '1.75rem', background: 'linear-gradient(135deg, #6366f1, #a855f7)', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.85rem', fontWeight: 800 }}>B</span>
+                      <span style={{ fontSize: '1rem', fontWeight: 800 }}>Bookzy Partner Dashboard</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                      <span className="badge badge-success">Priya's Salon</span>
+                      <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Luv Sharma (Owner)</span>
+                    </div>
+                  </div>
+
+                  {/* Dashboard Metrics */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
+                    <div style={{ border: '1px solid #f1f5f9', padding: '0.75rem', borderRadius: '8px', background: '#f8fafc' }}>
+                      <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>{isHindi ? 'कुल नियुक्तियाँ' : 'Total Appointments'}</div>
+                      <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#6366f1', marginTop: '0.25rem' }}>184</div>
+                      <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 600 }}>↑ 12% this week</span>
+                    </div>
+                    <div style={{ border: '1px solid #f1f5f9', padding: '0.75rem', borderRadius: '8px', background: '#f8fafc' }}>
+                      <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>{isHindi ? 'अनुमानित आय' : 'Estimated Revenue'}</div>
+                      <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#10b981', marginTop: '0.25rem' }}>₹92,450</div>
+                      <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 600 }}>↑ 8.4% this week</span>
+                    </div>
+                    <div style={{ border: '1px solid #f1f5f9', padding: '0.75rem', borderRadius: '8px', background: '#f8fafc' }}>
+                      <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>{isHindi ? 'पेज व्यूज' : 'Storefront Views'}</div>
+                      <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#f59e0b', marginTop: '0.25rem' }}>1,420</div>
+                      <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Conversion: 13%</span>
+                    </div>
+                  </div>
+
+                  {/* Booking Entries */}
+                  <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
+                    <div style={{ background: '#f8fafc', padding: '0.6rem 1rem', fontSize: '0.8rem', fontWeight: 700, borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between' }}>
+                      <span>{isHindi ? 'हालिया बुकिंग्स' : 'Recent Bookings'}</span>
+                      <span style={{ color: '#6366f1', cursor: 'pointer' }}>{isHindi ? 'सभी देखें' : 'View Calendar →'}</span>
+                    </div>
+                    <div style={{ fontSize: '0.85rem' }}>
+                      <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                        <div>
+                          <strong>Anjali Gupta</strong> (Haircut + Hair Spa)
+                          <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Today, 4:00 PM - 4:45 PM · WhatsApp Confirmed</div>
+                        </div>
+                        <span className="badge badge-success">Active</span>
+                      </div>
+                      <div style={{ padding: '0.75rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                        <div>
+                          <strong>Amit Verma</strong> (General consultation)
+                          <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Tomorrow, 10:30 AM - 11:00 AM · Pending Reply</div>
+                        </div>
+                        <span className="badge" style={{ background: '#fef3c7', color: '#d97706' }}>Pending</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {screenshotTab === 'whatsapp' && (
+              <motion.div
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                transition={{ duration: 0.3 }}
+                style={{ width: '100%', maxWidth: '380px' }}
+              >
+                {/* WhatsApp Chat Preview */}
+                <div style={{ background: '#ece5dd', border: '1px solid #cbd5e1', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', borderRadius: '24px', overflow: 'hidden', fontFamily: 'sans-serif' }}>
+                  {/* Chat Header */}
+                  <div style={{ background: '#075e54', padding: '0.75rem 1rem', color: 'white', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{ width: '2.25rem', height: '2.25rem', borderRadius: '50%', background: '#fff', color: '#075e54', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>B</div>
+                    <div>
+                      <div style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>Bookzy Assistant</div>
+                      <div style={{ fontSize: '0.7rem', opacity: 0.85 }}>online</div>
+                    </div>
+                  </div>
+
+                  {/* Chat Body */}
+                  <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem', minHeight: '320px', fontSize: '0.85rem' }}>
+                    {/* Bot Message */}
+                    <div style={{ background: 'white', padding: '0.75rem', borderRadius: '8px', alignSelf: 'flex-start', maxWidth: '85%', boxShadow: '0 1px 1px rgba(0,0,0,0.1)' }}>
+                      Hello Amit! 💇‍♂️
+                      <br /><br />
+                      You selected <strong>Haircut & Styling</strong> at <strong>Priya's Premium Salon</strong>.
+                      <br /><br />
+                      📅 Date: <strong>June 14, 2026</strong>
+                      <br />
+                      ⏰ Time: <strong>12:00 PM</strong>
+                      <br /><br />
+                      To confirm your slot instantly, please click send to message the merchant!
+                    </div>
+
+                    {/* Customer Response */}
+                    <div style={{ background: '#dcf8c6', padding: '0.75rem', borderRadius: '8px', alignSelf: 'flex-end', maxWidth: '85%', boxShadow: '0 1px 1px rgba(0,0,0,0.1)' }}>
+                      I want to book "Haircut & Styling" on June 14, 2026 at 12:00 PM via Bookzy.
+                    </div>
+
+                    {/* Bot Confirmation */}
+                    <div style={{ background: 'white', padding: '0.75rem', borderRadius: '8px', alignSelf: 'flex-start', maxWidth: '85%', boxShadow: '0 1px 1px rgba(0,0,0,0.1)' }}>
+                      ✅ <strong>Booking Confirmed!</strong>
+                      <br /><br />
+                      Your appointment at Priya's Premium Salon is successfully scheduled.
+                      <br /><br />
+                      📍 Location: Sector 18, Noida
+                      <br />
+                      📞 Support: +91 7668861953
+                      <br /><br />
+                      We will send you a reminder 2 hours before your session. See you there!
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </div>
+        </div>
+      </section>
+
       {/* Pricing Section */}
       <section id="pricing" style={{ padding: '6rem 0', background: '#eff6ff' }}>
         <div className="container">
@@ -545,6 +767,78 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Homepage Contact section */}
+      <section id="contact" style={{ padding: '5rem 0', background: 'linear-gradient(180deg, #fff 0%, #f8fafc 100%)', borderTop: '1px solid #e2e8f0' }}>
+        <div className="container" style={{ maxWidth: '900px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <span className="badge badge-success" style={{ marginBottom: '0.75rem' }}>{isHindi ? 'संपर्क करें' : 'Get in Touch'}</span>
+            <h2 style={{ fontSize: '2.5rem', letterSpacing: '-0.75px' }}>
+              {isHindi ? 'कोई सवाल है? हमसे पूछें' : 'Have Questions? Reach Out'}
+            </h2>
+            <p style={{ color: '#64748b', maxWidth: '500px', margin: '0.5rem auto 0 auto', fontSize: '0.95rem' }}>
+              {isHindi ? 'हमारी टीम आपकी सहायता के लिए यहाँ है। नीचे दिए गए फ़ॉर्म को भरें।' : 'Need custom triggers or have enterprise queries? Send a message and we will respond shortly.'}
+            </p>
+          </div>
+
+          <div className="grid-2" style={{ alignItems: 'start' }}>
+            {/* Contact Details Card */}
+            <div className="glass-card" style={{ background: 'white', display: 'flex', flexDirection: 'column', gap: '1.25rem', height: '100%' }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>{isHindi ? 'संपर्क जानकारी' : 'Direct Support'}</h3>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', fontSize: '0.9rem', color: '#64748b' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Globe size={16} style={{ color: '#6366f1' }} />
+                  <span><strong>Bookzy Platform</strong> (Sole Proprietorship)</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <HelpCircle size={16} style={{ color: '#6366f1' }} />
+                  <span>Founder: <strong>Luv Sharma</strong></span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <MapPin size={16} style={{ color: '#6366f1' }} />
+                  <span>Sector 18, Noida, Uttar Pradesh, India</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Mail size={16} style={{ color: '#6366f1' }} />
+                  <a href="mailto:support@bookzy.in" className="text-indigo-600 hover:underline">support@bookzy.in</a>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Phone size={16} style={{ color: '#6366f1' }} />
+                  <a href="tel:+917668861953" className="text-slate-700 hover:text-indigo-600 transition">+91 7668861953</a>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Contact Form */}
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                alert(isHindi ? "धन्यवाद! आपका संदेश सफलतापूर्वक भेज दिया गया है।" : "Thank you! Your message has been sent successfully.");
+                (e.target as HTMLFormElement).reset();
+              }}
+              className="glass-card" 
+              style={{ background: 'white', display: 'flex', flexDirection: 'column', gap: '1rem' }}
+            >
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">{isHindi ? 'आपका नाम' : 'Your Name'}</label>
+                <input type="text" className="form-input" required placeholder="e.g. Luv Sharma" />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">{isHindi ? 'ईमेल एड्रेस' : 'Email Address'}</label>
+                <input type="email" className="form-input" required placeholder="name@company.com" />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">{isHindi ? 'आपका संदेश' : 'Message'}</label>
+                <textarea className="form-input" required rows={3} placeholder={isHindi ? 'आप क्या पूछना चाहते हैं...' : 'How can we help your business...'} />
+              </div>
+              <button type="submit" className="btn btn-primary" style={{ padding: '0.75rem', fontSize: '0.95rem', fontWeight: 700 }}>
+                {isHindi ? 'संदेश भेजें' : 'Send Message'}
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer style={{ background: '#090d16', color: '#94a3b8', padding: '4rem 0 2rem 0', borderTop: '1px solid #1f2937', marginTop: 'auto' }}>
         <div className="container footer-grid" style={{ marginBottom: '3rem' }}>
@@ -560,7 +854,7 @@ export default function LandingPage() {
           </div>
 
           <div>
-            <h4 style={{ color: 'white', fontSize: '1rem', marginBottom: '1rem' }}>{isHindi ? 'प्लेटफार्म' : 'Platform'}</h4>
+            <h4 style={{ color: 'white', fontSize: '1rem', marginBottom: '1rem' }}>{isHindi ? 'प्लेटफॉर्म' : 'Platform'}</h4>
             <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.9rem' }}>
               <li><Link href="/dashboard" className="hover-white">{isHindi ? 'मर्चेंट डैशबोर्ड' : 'Merchant Dashboard'}</Link></li>
               <li><Link href="/book/priyas-salon" className="hover-white">{isHindi ? 'लाइव सैलून स्टोर' : 'Live Salon Demo'}</Link></li>
@@ -569,21 +863,30 @@ export default function LandingPage() {
           </div>
 
           <div>
-            <h4 style={{ color: 'white', fontSize: '1rem', marginBottom: '1rem' }}>{isHindi ? 'संपर्क' : 'Contact'}</h4>
-            <p style={{ fontSize: '0.9rem', lineHeight: 1.5 }}>
-              support@bookzy.in<br />
-              +91 7668861953<br />
-              Noida, Uttar Pradesh, India
-            </p>
+            <h4 style={{ color: 'white', fontSize: '1rem', marginBottom: '1rem' }}>{isHindi ? 'कंपनी' : 'Company'}</h4>
+            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.9rem' }}>
+              <li><Link href="/about" className="hover-white">{isHindi ? 'हमारे बारे में' : 'About Us'}</Link></li>
+              <li><Link href="/contact" className="hover-white">{isHindi ? 'संपर्क करें' : 'Contact Us'}</Link></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 style={{ color: 'white', fontSize: '1rem', marginBottom: '1rem' }}>{isHindi ? 'कानूनी' : 'Legal'}</h4>
+            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.9rem' }}>
+              <li><Link href="/privacy" className="hover-white">{isHindi ? 'गोपनीयता नीति' : 'Privacy Policy'}</Link></li>
+              <li><Link href="/terms" className="hover-white">{isHindi ? 'नियम और शर्तें' : 'Terms & Conditions'}</Link></li>
+              <li><Link href="/refund" className="hover-white">{isHindi ? 'वापसी नीति' : 'Refund Policy'}</Link></li>
+            </ul>
           </div>
 
         </div>
 
         <div className="container" style={{ borderTop: '1px solid #1f2937', paddingTop: '2rem', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', fontSize: '0.85rem' }}>
           <span>© 2026 Bookzy Platform. All Rights Reserved.</span>
-          <div style={{ display: 'flex', gap: '1.5rem' }}>
-            <a href="#" className="hover-white">Privacy Policy</a>
-            <a href="#" className="hover-white">Terms of Service</a>
+          <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
+            <Link href="/privacy" className="hover-white">Privacy Policy</Link>
+            <Link href="/terms" className="hover-white">Terms & Conditions</Link>
+            <Link href="/refund" className="hover-white">Refund & Cancellation</Link>
           </div>
         </div>
       </footer>
@@ -615,7 +918,7 @@ export default function LandingPage() {
             gap: 3rem;
           }
           .footer-grid {
-            grid-template-columns: 1.5fr 1fr 1fr;
+            grid-template-columns: 1.5fr 1fr 1fr 1fr;
             gap: 3rem;
           }
         }
