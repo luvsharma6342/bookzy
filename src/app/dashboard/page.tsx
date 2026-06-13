@@ -92,6 +92,14 @@ export default function MerchantDashboard() {
   const [gmbLinked, setGmbLinked] = useState(true);
   const [simulatedReminderText, setSimulatedReminderText] = useState<string | null>(null);
 
+  // WhatsApp States
+  const [metaWabaIdInput, setMetaWabaIdInput] = useState('');
+  const [metaPhoneNumberIdInput, setMetaPhoneNumberIdInput] = useState('');
+  const [metaPermanentTokenInput, setMetaPermanentTokenInput] = useState('');
+  const [testPhoneInput, setTestPhoneInput] = useState('');
+  const [testSending, setTestSending] = useState(false);
+  const [saveBizLoading, setSaveBizLoading] = useState(false);
+
   // Payment state
   const [paymentLoading, setPaymentLoading] = useState<string | null>(null);
   const [cancelLoading, setCancelLoading] = useState(false);
@@ -320,19 +328,144 @@ export default function MerchantDashboard() {
     }
   };
 
-  // Simulate Reminder Dispatch (Meta API mockup)
-  const handleSimulateReminder = (booking: Booking) => {
-    const msg = `Hi ${booking.customerName}, friendly reminder: your ${services.find(s => s.id === booking.serviceId)?.name || 'service'} is scheduled for today at ${new Date(booking.bookingTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}. Reply CANCEL to cancel.`;
-    setSimulatedReminderText(`📲 WhatsApp Reminder dispatched to ${booking.customerName} (${booking.customerPhone}): "${msg}"`);
-    setTimeout(() => setSimulatedReminderText(null), 6000);
+  // WhatsApp Input Initializer
+  useEffect(() => {
+    if (business) {
+      setMetaWabaIdInput(business.metaWabaId || '');
+      setMetaPhoneNumberIdInput(business.metaPhoneNumberId || '');
+      setMetaPermanentTokenInput(business.metaPermanentToken || '');
+    }
+  }, [business]);
+
+  const handleSaveWABA = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!business) return;
+    setSaveBizLoading(true);
+    try {
+      const res = await fetch("/api/businesses", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: business.id,
+          metaWabaId: metaWabaIdInput,
+          metaPhoneNumberId: metaPhoneNumberIdInput,
+          metaPermanentToken: metaPermanentTokenInput
+        })
+      });
+      if (res.ok) {
+        showToast("WhatsApp Cloud API settings saved successfully!", "success");
+        await reloadData(business.id);
+      } else {
+        const data = await res.json();
+        showToast(data.error || "Failed to save settings", "error");
+      }
+    } catch {
+      showToast("Network error. Please try again.", "error");
+    } finally {
+      setSaveBizLoading(false);
+    }
   };
 
-  // Simulate Review Request Dispatch (Meta API mockup)
-  const handleSimulateReviewRequest = (booking: Booking) => {
+  const handleSendTestWhatsApp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!business || !testPhoneInput.trim()) return;
+    setTestSending(true);
+    try {
+      const res = await fetch("/api/whatsapp/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          businessId: business.id,
+          toPhone: testPhoneInput,
+          templateName: "booking_confirmation",
+          params: [session?.user?.name || "Test User", "Test Premium Haircut", "15 Jun at 10:00 AM", "Priya Sharma"]
+        })
+      });
+      if (res.ok) {
+        showToast("Test WhatsApp message dispatched successfully!", "success");
+        setTestPhoneInput('');
+      } else {
+        const data = await res.json();
+        showToast(data.error || "Failed to send test message", "error");
+      }
+    } catch {
+      showToast("Network error during test dispatch", "error");
+    } finally {
+      setTestSending(false);
+    }
+  };
+
+  // Send Reminder (Real Meta WABA if configured, otherwise simulation fallback)
+  const handleSendReminder = async (booking: Booking) => {
+    if (!business) return;
+    const svcName = services.find(s => s.id === booking.serviceId)?.name || 'service';
+    const dateObj = new Date(booking.bookingTime);
+    const timeFormatted = dateObj.toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true
+    });
+
+    if (business.metaPhoneNumberId && business.metaPermanentToken) {
+      showToast("Dispatching real WhatsApp reminder...", "success");
+      try {
+        const res = await fetch("/api/whatsapp/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            businessId: business.id,
+            toPhone: booking.customerPhone,
+            templateName: "appointment_reminder",
+            params: [booking.customerName, svcName, timeFormatted]
+          })
+        });
+        if (res.ok) {
+          showToast("Real WhatsApp Reminder dispatched successfully!", "success");
+        } else {
+          const data = await res.json();
+          showToast(data.error || "Failed to send WhatsApp reminder", "error");
+        }
+      } catch (err) {
+        showToast("Network error dispatching WhatsApp reminder", "error");
+      }
+    } else {
+      const msg = `Hi ${booking.customerName}, friendly reminder: your ${svcName} is scheduled for today at ${timeFormatted}. Reply CANCEL to cancel.`;
+      setSimulatedReminderText(`📲 WhatsApp Reminder dispatched (Simulation) to ${booking.customerName} (${booking.customerPhone}): "${msg}"`);
+      setTimeout(() => setSimulatedReminderText(null), 6000);
+    }
+  };
+
+  // Send Review Request (Simulation or Text if WABA configured)
+  const handleSendReviewRequest = async (booking: Booking) => {
     if (!business) return;
     const msg = `Hi ${booking.customerName}, thanks for visiting ${business.name} today! If you enjoyed your experience, we'd love a Google review: https://g.page/${business.slug}/review`;
-    setSimulatedReminderText(`📲 WhatsApp Review Request sent to ${booking.customerName} (${booking.customerPhone}): "${msg}"`);
-    setTimeout(() => setSimulatedReminderText(null), 6000);
+
+    if (business.metaPhoneNumberId && business.metaPermanentToken) {
+      showToast("Dispatching real WhatsApp review request...", "success");
+      try {
+        const res = await fetch("/api/whatsapp/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            businessId: business.id,
+            toPhone: booking.customerPhone,
+            templateName: "no_show_followup",
+            params: [booking.customerName, `Visit Feedback (Google Review)`]
+          })
+        });
+        if (res.ok) {
+          showToast("Real WhatsApp feedback request dispatched!", "success");
+        } else {
+          const data = await res.json();
+          showToast(data.error || "Failed to send feedback request", "error");
+        }
+      } catch {
+        showToast("Network error dispatching review request", "error");
+      }
+    } else {
+      setSimulatedReminderText(`📲 WhatsApp Review Request sent (Simulation) to ${booking.customerName} (${booking.customerPhone}): "${msg}"`);
+      setTimeout(() => setSimulatedReminderText(null), 6000);
+    }
   };
 
   // Export CSV mock
@@ -1013,7 +1146,7 @@ export default function MerchantDashboard() {
                                     ⚠️ No-show
                                   </button>
                                   {isPaidPlan(business.plan) && (
-                                    <button onClick={() => handleSimulateReminder(bk)} className="btn btn-secondary btn-sm" style={{ padding: '0.25rem 0.5rem', fontSize: '0.7rem', background: '#25d366', color: 'white', border: 'none' }} title="Send Manual Reminder">
+                                    <button onClick={() => handleSendReminder(bk)} className="btn btn-secondary btn-sm" style={{ padding: '0.25rem 0.5rem', fontSize: '0.7rem', background: '#25d366', color: 'white', border: 'none' }} title="Send Manual Reminder">
                                       🔔 Remind
                                     </button>
                                   )}
@@ -1022,7 +1155,7 @@ export default function MerchantDashboard() {
 
                               {/* Completed review trigger simulation */}
                               {bk.status === 'completed' && isPaidPlan(business.plan) && (
-                                <button onClick={() => handleSimulateReviewRequest(bk)} className="btn btn-secondary btn-sm" style={{ padding: '0.25rem 0.5rem', fontSize: '0.7rem', background: '#eab308', color: 'white', border: 'none' }} title="Ask for Google Review">
+                                <button onClick={() => handleSendReviewRequest(bk)} className="btn btn-secondary btn-sm" style={{ padding: '0.25rem 0.5rem', fontSize: '0.7rem', background: '#eab308', color: 'white', border: 'none' }} title="Ask for Google Review">
                                   ⭐ Ask Review
                                 </button>
                               )}
@@ -1272,88 +1405,168 @@ export default function MerchantDashboard() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ fontSize: '1.25rem' }}>WhatsApp Cloud API Integration Simulator</h3>
+              <h3 style={{ fontSize: '1.25rem' }}>WhatsApp Cloud API Integration</h3>
               <span className="badge badge-success">Pro Plan active</span>
             </div>
 
-            <div className="glass-card" style={{ background: 'var(--card)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-                <div>
-                  <h4 style={{ fontSize: '1rem' }}>Meta Developer Portal Link</h4>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--muted)', marginTop: '0.15rem' }}>
-                    Simulate connecting this business dashboard to Meta WABA (WhatsApp Business Account).
-                  </p>
-                </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', alignItems: 'start' }}>
+              
+              {/* Credentials Card */}
+              <div className="glass-card" style={{ background: 'var(--card)' }}>
+                <h4 style={{ fontSize: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem', marginBottom: '1rem' }}>
+                  Meta Developer Account Credentials
+                </h4>
                 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{wabaConnected ? 'Connected ✅' : 'Disconnected ❌'}</span>
-                  <label className="toggle-switch">
+                <form onSubmit={handleSaveWABA} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div className="form-group">
+                    <label className="form-label">Meta WABA ID</label>
                     <input 
-                      type="checkbox" 
-                      checked={wabaConnected} 
-                      onChange={() => setWabaConnected(!wabaConnected)}
+                      type="text" 
+                      placeholder="e.g. 1098485743729" 
+                      className="form-input" 
+                      value={metaWabaIdInput}
+                      onChange={(e) => setMetaWabaIdInput(e.target.value)} 
                     />
-                    <span className="slider"></span>
-                  </label>
-                </div>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label className="form-label">Meta Phone Number ID</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. 1047285938202" 
+                      className="form-input" 
+                      value={metaPhoneNumberIdInput}
+                      onChange={(e) => setMetaPhoneNumberIdInput(e.target.value)} 
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Meta Permanent Access Token</label>
+                    <input 
+                      type="password" 
+                      placeholder="EAAGkZB...vXj" 
+                      className="form-input" 
+                      value={metaPermanentTokenInput}
+                      onChange={(e) => setMetaPermanentTokenInput(e.target.value)} 
+                    />
+                  </div>
+
+                  <button 
+                    type="submit" 
+                    className="btn btn-primary" 
+                    disabled={saveBizLoading}
+                    style={{ marginTop: '0.5rem', width: '100%' }}
+                  >
+                    {saveBizLoading ? 'Saving...' : 'Save Configuration'}
+                  </button>
+                </form>
               </div>
 
-              {wabaConnected && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              {/* Setup Guide and Testing */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                
+                {/* Webhook Connection Guide */}
+                <div className="glass-card" style={{ background: 'var(--card)' }}>
+                  <h4 style={{ fontSize: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem', marginBottom: '0.75rem' }}>
+                    Webhook Configuration
+                  </h4>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: '1rem' }}>
+                    Configure Meta's developer portal webhook to point here to capture incoming responses (like canceling a booking when a user replies CANCEL).
+                  </p>
                   
-                  {/* Webhook Credentials Mock */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                    <div className="form-group">
-                      <label className="form-label" style={{ opacity: 0.7 }}>Meta WABA ID</label>
-                      <input type="text" readOnly className="form-input" value="1098485743729" style={{ opacity: 0.6, fontSize: '0.8rem' }} />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <div>
+                      <span className="text-xs font-semibold text-slate-400">CALLBACK URL</span>
+                      <div className="form-input" style={{ fontSize: '0.75rem', background: 'var(--muted-light)', userSelect: 'all', fontFamily: 'monospace', padding: '0.5rem' }}>
+                        https://bookze.vercel.app/api/whatsapp/webhook
+                      </div>
                     </div>
-                    <div className="form-group">
-                      <label className="form-label" style={{ opacity: 0.7 }}>Permanent User Token</label>
-                      <input type="text" readOnly className="form-input" value="EAAGkZB...vXj" style={{ opacity: 0.6, fontSize: '0.8rem' }} />
-                    </div>
-                  </div>
-
-                  {/* Pre-approved WhatsApp Templates */}
-                  <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
-                    <h4 style={{ fontSize: '0.95rem', marginBottom: '0.75rem' }}>Pre-Approved WhatsApp Templates</h4>
-                    
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      
-                      <div style={{ background: 'var(--muted-light)', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700, color: '#10b981' }}>
-                          <span>TEMPLATE: `booking_confirmation`</span>
-                          <span>APPROVED</span>
-                        </div>
-                        <p style={{ fontSize: '0.85rem', marginTop: '0.25rem', fontFamily: 'monospace' }}>
-                          "Hi {"{{1}}"}(Name), your {"{{2}}"}(Service) appointment at {"{{3}}"}(Time) with {"{{4}}"}(Staff) is confirmed! See you then."
-                        </p>
+                    <div>
+                      <span className="text-xs font-semibold text-slate-400">VERIFY TOKEN</span>
+                      <div className="form-input" style={{ fontSize: '0.75rem', background: 'var(--muted-light)', userSelect: 'all', fontFamily: 'monospace', padding: '0.5rem' }}>
+                        bookze_whatsapp_2024
                       </div>
-
-                      <div style={{ background: 'var(--muted-light)', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700, color: '#10b981' }}>
-                          <span>TEMPLATE: `appointment_reminder`</span>
-                          <span>APPROVED</span>
-                        </div>
-                        <p style={{ fontSize: '0.85rem', marginTop: '0.25rem', fontFamily: 'monospace' }}>
-                          "Hi {"{{1}}"}(Name), friendly reminder: your {"{{2}}"}(Service) is scheduled for today at {"{{3}}"}(Time). Reply CANCEL to cancel."
-                        </p>
-                      </div>
-
-                      <div style={{ background: 'var(--muted-light)', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700, color: '#10b981' }}>
-                          <span>TEMPLATE: `no_show_followup`</span>
-                          <span>APPROVED</span>
-                        </div>
-                        <p style={{ fontSize: '0.85rem', marginTop: '0.25rem', fontFamily: 'monospace' }}>
-                          "Hi {"{{1}}"}(Name), we missed you for your {"{{2}}"}(Service) today. Want to reschedule? Reply YES and we'll find you a new slot."
-                        </p>
-                      </div>
-
                     </div>
                   </div>
-
                 </div>
-              )}
+
+                {/* Test Connection Card */}
+                {business?.metaPhoneNumberId && business?.metaPermanentToken && (
+                  <div className="glass-card" style={{ background: 'var(--card)' }}>
+                    <h4 style={{ fontSize: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem', marginBottom: '0.75rem' }}>
+                      Test Connection
+                    </h4>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: '1rem' }}>
+                      Send a test `booking_confirmation` template message to your phone.
+                    </p>
+                    
+                    <form onSubmit={handleSendTestWhatsApp} style={{ display: 'flex', gap: '0.5rem' }}>
+                      <input 
+                        type="tel" 
+                        placeholder="+919999999999" 
+                        required
+                        className="form-input" 
+                        style={{ flex: 1 }}
+                        value={testPhoneInput}
+                        onChange={(e) => setTestPhoneInput(e.target.value)}
+                      />
+                      <button 
+                        type="submit" 
+                        className="btn btn-primary" 
+                        disabled={testSending}
+                        style={{ padding: '0.5rem 1rem' }}
+                      >
+                        {testSending ? 'Sending...' : 'Send Test'}
+                      </button>
+                    </form>
+                  </div>
+                )}
+
+              </div>
+            </div>
+
+            {/* Template Information */}
+            <div className="glass-card" style={{ background: 'var(--card)' }}>
+              <h4 style={{ fontSize: '1rem', marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
+                Pre-Approved WhatsApp Templates
+              </h4>
+              <p style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: '1rem' }}>
+                To send messages, you must first create these template names inside your Meta Business Suite:
+              </p>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                
+                <div style={{ background: 'var(--muted-light)', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700, color: '#10b981' }}>
+                    <span>TEMPLATE: `booking_confirmation`</span>
+                    <span>REQUIRED</span>
+                  </div>
+                  <p style={{ fontSize: '0.85rem', marginTop: '0.25rem', fontFamily: 'monospace' }}>
+                    "Hi {"{{1}}"}(Name), your {"{{2}}"}(Service) appointment at {"{{3}}"}(Time) with {"{{4}}"}(Staff) is confirmed! See you then."
+                  </p>
+                </div>
+
+                <div style={{ background: 'var(--muted-light)', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700, color: '#10b981' }}>
+                    <span>TEMPLATE: `appointment_reminder`</span>
+                    <span>REQUIRED</span>
+                  </div>
+                  <p style={{ fontSize: '0.85rem', marginTop: '0.25rem', fontFamily: 'monospace' }}>
+                    "Hi {"{{1}}"}(Name), friendly reminder: your {"{{2}}"}(Service) is scheduled for today at {"{{3}}"}(Time). Reply CANCEL to cancel."
+                  </p>
+                </div>
+
+                <div style={{ background: 'var(--muted-light)', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700, color: '#10b981' }}>
+                    <span>TEMPLATE: `no_show_followup`</span>
+                    <span>REQUIRED</span>
+                  </div>
+                  <p style={{ fontSize: '0.85rem', marginTop: '0.25rem', fontFamily: 'monospace' }}>
+                    "Hi {"{{1}}"}(Name), we missed you for your {"{{2}}"}(Service) today. Want to reschedule? Reply YES and we'll find you a new slot."
+                  </p>
+                </div>
+
+              </div>
             </div>
 
           </div>

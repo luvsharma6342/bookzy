@@ -108,7 +108,22 @@ export async function PUT(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { id, name, category, phone, city, description, workingHours, plan, planStatus, planExpiresAt, razorpaySubscriptionId } = body;
+    const { 
+      id, 
+      name, 
+      category, 
+      phone, 
+      city, 
+      description, 
+      workingHours, 
+      plan, 
+      planStatus, 
+      planExpiresAt, 
+      razorpaySubscriptionId,
+      metaWabaId,
+      metaPhoneNumberId,
+      metaPermanentToken
+    } = body;
 
     if (!id) {
       return NextResponse.json({ error: "Business ID is required" }, { status: 400 });
@@ -137,6 +152,9 @@ export async function PUT(req: NextRequest) {
         planStatus: planStatus || undefined,
         planExpiresAt: planExpiresAt || undefined,
         razorpaySubscriptionId: razorpaySubscriptionId !== undefined ? razorpaySubscriptionId : undefined,
+        metaWabaId: metaWabaId !== undefined ? metaWabaId : undefined,
+        metaPhoneNumberId: metaPhoneNumberId !== undefined ? metaPhoneNumberId : undefined,
+        metaPermanentToken: metaPermanentToken !== undefined ? metaPermanentToken : undefined,
       },
     });
 

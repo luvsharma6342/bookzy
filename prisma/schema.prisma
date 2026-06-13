@@ -82,6 +82,9 @@ model Business {
   planStatus               String           @default("active") // "active" | "cancelled" | "past_due"
   planExpiresAt            DateTime?
   razorpaySubscriptionId   String?
+  metaWabaId               String?
+  metaPhoneNumberId        String?
+  metaPermanentToken       String?
   reviewsCount             Int              @default(0)
   rating                   Float            @default(5.0)
   
