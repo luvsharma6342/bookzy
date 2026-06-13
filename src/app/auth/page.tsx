@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import Link from "next/link";
-import { Lock, Mail, User, AlertCircle, ArrowRight, Sparkles } from "lucide-react";
+import { Lock, Mail, User, AlertCircle, ArrowRight, Sparkles, Phone } from "lucide-react";
 import { useEffect, useState, Suspense } from "react";
 
 function AuthForm() {
@@ -16,6 +16,7 @@ function AuthForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -69,6 +70,7 @@ function AuthForm() {
                   name: bizName,
                   slug: slug || "my-store",
                   category: category || "Salons & Beauty Parlours",
+                  phone: phone || undefined,
                 }),
               });
             } catch (err) {
@@ -139,6 +141,28 @@ function AuthForm() {
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 text-sm bg-white"
                   />
                 </div>
+              </div>
+            )}
+
+            {!isLogin && bizName && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-600">WhatsApp Phone Number</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                    <Phone size={18} />
+                  </span>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="e.g. +91 98765 43210"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 text-sm bg-white"
+                  />
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Customers will use this number to send booking requests directly on WhatsApp.
+                </p>
               </div>
             )}
 

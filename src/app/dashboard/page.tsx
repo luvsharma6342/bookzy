@@ -61,7 +61,7 @@ export default function MerchantDashboard() {
   const [business, setBusiness] = useState<Business | null>(null);
 
   // Active Tab / View
-  const [activeView, setActiveView] = useState<'analytics' | 'bookings' | 'services' | 'availability' | 'whatsapp' | 'staff'>('analytics');
+  const [activeView, setActiveView] = useState<'analytics' | 'bookings' | 'services' | 'availability' | 'whatsapp' | 'staff' | 'settings'>('analytics');
 
   // Business state variables
   const [services, setServices] = useState<Service[]>([]);
@@ -627,6 +627,15 @@ export default function MerchantDashboard() {
             {business.plan === 'free' && (
               <span style={{ background: '#ef4444', color: 'white', fontSize: '0.6rem', padding: '1px 4px', borderRadius: '4px', marginLeft: 'auto', fontWeight: 700 }}>PRO</span>
             )}
+          </button>
+
+          <button 
+            onClick={() => setActiveView('settings')} 
+            className={`btn btn-sm ${activeView === 'settings' ? 'btn-primary' : 'btn-outline'}`}
+            style={{ justifyContent: 'flex-start', width: '100%', border: 'none', marginTop: '0.5rem' }}
+          >
+            <Settings size={18} />
+            <span>Business Settings</span>
           </button>
         </nav>
 
@@ -1329,6 +1338,118 @@ export default function MerchantDashboard() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* VIEW 7: BUSINESS SETTINGS */}
+        {activeView === 'settings' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <h3 style={{ fontSize: '1.25rem' }}>Business Settings</h3>
+            <form 
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!business) return;
+                const target = e.currentTarget;
+                const name = (target.elements.namedItem("bizName") as HTMLInputElement).value;
+                const category = (target.elements.namedItem("bizCategory") as HTMLSelectElement).value;
+                const phone = (target.elements.namedItem("bizPhone") as HTMLInputElement).value;
+                const city = (target.elements.namedItem("bizCity") as HTMLInputElement).value;
+                const description = (target.elements.namedItem("bizDesc") as HTMLTextAreaElement).value;
+
+                try {
+                  const res = await fetch("/api/businesses", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      id: business.id,
+                      name,
+                      category,
+                      phone,
+                      city,
+                      description
+                    })
+                  });
+
+                  if (res.ok) {
+                    const updated = await res.json();
+                    setBusiness(updated);
+                    alert("Business settings updated successfully!");
+                    reloadData(business.id);
+                  } else {
+                    alert("Failed to update business settings.");
+                  }
+                } catch (err) {
+                  console.error(err);
+                  alert("Failed to update business settings.");
+                }
+              }}
+              className="glass-card" 
+              style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', background: 'var(--card)' }}
+            >
+              <div className="grid-2">
+                <div className="form-group">
+                  <label className="form-label">Business Name</label>
+                  <input 
+                    name="bizName"
+                    type="text" 
+                    required 
+                    defaultValue={business.name}
+                    className="form-input"
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Category</label>
+                  <select 
+                    name="bizCategory"
+                    defaultValue={business.category}
+                    className="form-select"
+                  >
+                    <option value="Salons & Beauty Parlours">Salons & Beauty Parlours</option>
+                    <option value="Gyms & Yoga Studios">Gyms & Yoga Studios</option>
+                    <option value="Clinics & Doctors">Clinics & Doctors</option>
+                    <option value="Tutors & Coaching Classes">Tutors & Coaching Classes</option>
+                    <option value="Local Services (Plumbers/Carpenters)">Local Services (Plumbers/Carpenters)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid-2">
+                <div className="form-group">
+                  <label className="form-label">WhatsApp Phone Number</label>
+                  <input 
+                    name="bizPhone"
+                    type="tel" 
+                    required 
+                    defaultValue={business.phone}
+                    className="form-input"
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">City Location</label>
+                  <input 
+                    name="bizCity"
+                    type="text" 
+                    required 
+                    defaultValue={business.city}
+                    className="form-input"
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Brief Description</label>
+                <textarea 
+                  name="bizDesc"
+                  defaultValue={business.description}
+                  rows={3}
+                  className="form-textarea"
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <button type="submit" className="btn btn-primary btn-sm">Save Settings</button>
+              </div>
+            </form>
           </div>
         )}
 
