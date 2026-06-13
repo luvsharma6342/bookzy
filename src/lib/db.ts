@@ -17,6 +17,9 @@ export interface Business {
   planStatus?: 'active' | 'cancelled' | 'past_due';
   planExpiresAt?: string | null;
   razorpaySubscriptionId?: string | null;
+  metaWabaId?: string;
+  metaPhoneNumberId?: string;
+  metaPermanentToken?: string;
   reviewsCount: number;
   rating: number;
 }

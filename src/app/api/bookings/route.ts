@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { cacheGet, cacheSet, cacheDel, cacheKeys, TTL } from "@/lib/redis";
+import { getEffectivePlan, isPaidPlan } from "@/lib/planOverride";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -67,6 +68,51 @@ export async function POST(req: NextRequest) {
     // Invalidate bookings cache so dashboard and storefront get fresh data
     await cacheDel(cacheKeys.bookings(businessId));
 
+    // Automated WhatsApp Trigger on creation
+    try {
+      const business = await prisma.business.findUnique({
+        where: { id: businessId }
+      });
+
+      if (business && isPaidPlan(getEffectivePlan(business.plan)) && business.metaPhoneNumberId && business.metaPermanentToken) {
+        const service = await prisma.service.findUnique({
+          where: { id: serviceId }
+        });
+
+        let staffName = "Any Staff";
+        if (staffId && !staffId.startsWith("st-")) {
+          const staff = await prisma.staff.findUnique({
+            where: { id: staffId }
+          });
+          if (staff) {
+            staffName = staff.name;
+          }
+        }
+
+        const dateObj = new Date(bookingTime);
+        const timeFormatted = dateObj.toLocaleDateString("en-IN", {
+          day: "numeric",
+          month: "short",
+          year: "numeric"
+        }) + " at " + dateObj.toLocaleTimeString("en-IN", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true
+        });
+
+        const { sendWhatsAppTemplate } = await import("@/lib/whatsapp");
+        await sendWhatsAppTemplate(
+          business.metaPhoneNumberId,
+          business.metaPermanentToken,
+          customerPhone,
+          "booking_confirmation",
+          [customerName, service?.name || "Service", timeFormatted, staffName]
+        );
+      }
+    } catch (waErr) {
+      console.error("Failed to trigger automated WhatsApp confirmation:", waErr);
+    }
+
     return NextResponse.json(booking);
   } catch (error: any) {
     console.error("Error creating booking:", error);
@@ -109,6 +155,26 @@ export async function PUT(req: NextRequest) {
 
     // Invalidate bookings cache on status change
     await cacheDel(cacheKeys.bookings(booking.businessId));
+
+    // Automated WhatsApp Trigger on no-show
+    if (status === "no_show" && booking.business.metaPhoneNumberId && booking.business.metaPermanentToken && isPaidPlan(getEffectivePlan(booking.business.plan))) {
+      try {
+        const service = await prisma.service.findUnique({
+          where: { id: booking.serviceId }
+        });
+
+        const { sendWhatsAppTemplate } = await import("@/lib/whatsapp");
+        await sendWhatsAppTemplate(
+          booking.business.metaPhoneNumberId,
+          booking.business.metaPermanentToken,
+          booking.customerPhone,
+          "no_show_followup",
+          [booking.customerName, service?.name || "Service"]
+        );
+      } catch (waErr) {
+        console.error("Failed to trigger automated WhatsApp no-show follow-up:", waErr);
+      }
+    }
 
     return NextResponse.json(updated);
   } catch (error: any) {
