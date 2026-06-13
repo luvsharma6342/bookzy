@@ -66,21 +66,24 @@ model Verification {
 }
 
 model Business {
-  id           String           @id @default(uuid())
-  ownerId      String?
-  owner        User?            @relation(fields: [ownerId], references: [id], onDelete: SetNull)
-  name         String
-  slug         String           @unique
-  category     String
-  phone        String
-  description  String
-  city         String
-  logoUrl      String?
-  coverUrl     String?
-  workingHours Json             // Stores structured hours: { monday: { open: "10:00", close: "20:00", closed: false }, ... }
-  plan         String           @default("free") // "free" | "growth" | "pro"
-  reviewsCount Int              @default(0)
-  rating       Float            @default(5.0)
+  id                       String           @id @default(uuid())
+  ownerId                  String?
+  owner                    User?            @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  name                     String
+  slug                     String           @unique
+  category                 String
+  phone                    String
+  description              String
+  city                     String
+  logoUrl                  String?
+  coverUrl                 String?
+  workingHours             Json             // Stores structured hours: { monday: { open: "10:00", close: "20:00", closed: false }, ... }
+  plan                     String           @default("free") // "free" | "growth" | "pro"
+  planStatus               String           @default("active") // "active" | "cancelled" | "past_due"
+  planExpiresAt            DateTime?
+  razorpaySubscriptionId   String?
+  reviewsCount             Int              @default(0)
+  rating                   Float            @default(5.0)
   
   services     Service[]
   staff        Staff[]
@@ -89,6 +92,7 @@ model Business {
 
   @@map("business")
 }
+
 
 model Service {
   id          String    @id @default(uuid())

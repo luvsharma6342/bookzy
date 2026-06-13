@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -35,7 +35,11 @@ import {
   RefreshCw,
   BellRing,
   Star,
-  CheckCircle
+  CheckCircle,
+  CreditCard,
+  Loader2,
+  AlertTriangle,
+  ShieldCheck
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -50,6 +54,7 @@ import {
   Legend
 } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRazorpay } from '@/hooks/useRazorpay';
 
 export default function MerchantDashboard() {
   const router = useRouter();
@@ -85,6 +90,11 @@ export default function MerchantDashboard() {
   const [wabaConnected, setWabaConnected] = useState(true);
   const [gmbLinked, setGmbLinked] = useState(true);
   const [simulatedReminderText, setSimulatedReminderText] = useState<string | null>(null);
+
+  // Payment state
+  const [paymentLoading, setPaymentLoading] = useState<string | null>(null);
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const { openCheckout } = useRazorpay();
 
   // Toast notifications
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -162,22 +172,47 @@ export default function MerchantDashboard() {
     };
   }, []);
 
-  // Plan changing simulation
-  const handlePlanChange = async (newPlan: 'free' | 'growth' | 'pro') => {
+  // Real Razorpay payment checkout
+  const handleUpgrade = async (plan: 'growth' | 'pro') => {
     if (!business) return;
+    setPaymentLoading(plan);
+    await openCheckout({
+      plan,
+      businessId: business.id,
+      onSuccess: async (upgradedPlan) => {
+        setPaymentLoading(null);
+        showToast(`🎉 Successfully upgraded to ${upgradedPlan.charAt(0).toUpperCase() + upgradedPlan.slice(1)} plan!`, 'success');
+        await reloadData(business.id);
+      },
+      onError: (err) => {
+        setPaymentLoading(null);
+        if (!err.includes('cancelled')) showToast(err, 'error');
+      },
+    });
+  };
+
+  // Cancel subscription
+  const handleCancelSubscription = async () => {
+    if (!business?.razorpaySubscriptionId) return;
+    if (!confirm('Cancel your subscription? You will retain access until the current billing period ends.')) return;
+    setCancelLoading(true);
     try {
-      const res = await fetch("/api/businesses", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: business.id, plan: newPlan })
+      const res = await fetch('/api/payment/cancel', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ businessId: business.id }),
       });
       if (res.ok) {
-        const updated = await res.json();
-        setBusiness(updated);
-        reloadData(business.id);
+        showToast('Subscription cancelled. Access continues until your billing period ends.', 'success');
+        await reloadData(business.id);
+      } else {
+        const err = await res.json();
+        showToast(err.error || 'Failed to cancel subscription', 'error');
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
+      showToast('Network error. Please try again.', 'error');
+    } finally {
+      setCancelLoading(false);
     }
   };
 
@@ -650,20 +685,25 @@ export default function MerchantDashboard() {
 
         {/* Lower Info & Plan Control */}
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.25rem', marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          <div>
+          <div style={{ background: 'rgba(99,102,241,0.08)', borderRadius: '8px', padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>Current Plan</span>
+              <span style={{ fontSize: '0.75rem', opacity: 0.7, fontWeight: 600 }}>Current Plan</span>
               <span className={`badge ${business.plan === 'pro' ? 'badge-success' : (business.plan === 'growth' ? 'badge-primary' : 'badge-muted')}`} style={{ textTransform: 'uppercase', fontSize: '0.65rem' }}>
                 {business.plan}
               </span>
             </div>
-            
-            {/* Quick tier picker simulator */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.25rem', marginTop: '0.5rem' }}>
-              <button onClick={() => handlePlanChange('free')} style={{ padding: '0.25rem', fontSize: '0.65rem', border: '1px solid var(--border)', borderRadius: '4px', background: business.plan === 'free' ? 'var(--primary)' : 'transparent', color: business.plan === 'free' ? 'white' : 'inherit', cursor: 'pointer' }}>Free</button>
-              <button onClick={() => handlePlanChange('growth')} style={{ padding: '0.25rem', fontSize: '0.65rem', border: '1px solid var(--border)', borderRadius: '4px', background: business.plan === 'growth' ? 'var(--primary)' : 'transparent', color: business.plan === 'growth' ? 'white' : 'inherit', cursor: 'pointer' }}>Grow</button>
-              <button onClick={() => handlePlanChange('pro')} style={{ padding: '0.25rem', fontSize: '0.65rem', border: '1px solid var(--border)', borderRadius: '4px', background: business.plan === 'pro' ? 'var(--primary)' : 'transparent', color: business.plan === 'pro' ? 'white' : 'inherit', cursor: 'pointer' }}>Pro</button>
-            </div>
+            {business.planStatus === 'cancelled' && (
+              <span style={{ fontSize: '0.7rem', color: '#f59e0b' }}>⚠ Cancels at period end</span>
+            )}
+            {business.plan === 'free' && (
+              <button
+                onClick={() => setActiveView('settings')}
+                className="btn btn-primary btn-sm"
+                style={{ fontSize: '0.7rem', padding: '0.3rem 0.6rem', marginTop: '0.25rem' }}
+              >
+                <CreditCard size={12} /> Upgrade Plan
+              </button>
+            )}
           </div>
 
           <Link href={`/book/${business.slug}`} target="_blank" className="btn btn-outline btn-sm" style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '0.25rem' }}>
@@ -1383,6 +1423,156 @@ export default function MerchantDashboard() {
         {activeView === 'settings' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             <h3 style={{ fontSize: '1.25rem' }}>Business Settings</h3>
+
+            {/* ── SUBSCRIPTION & BILLING CARD ── */}
+            <div className="glass-card" style={{ background: 'var(--card)', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+                <div style={{ width: '2.25rem', height: '2.25rem', borderRadius: '8px', background: 'rgba(99,102,241,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <CreditCard size={18} style={{ color: 'var(--primary)' }} />
+                </div>
+                <div>
+                  <h4 style={{ fontWeight: 700, fontSize: '1rem' }}>Subscription & Billing</h4>
+                  <p style={{ fontSize: '0.8rem', opacity: 0.6 }}>Manage your plan, billing, and upgrades</p>
+                </div>
+              </div>
+
+              {/* Current Plan Status */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                  <span style={{ fontSize: '0.8rem', opacity: 0.6, fontWeight: 600 }}>ACTIVE PLAN</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{
+                      fontSize: '1.5rem', fontWeight: 800,
+                      color: business.plan === 'pro' ? '#a855f7' : business.plan === 'growth' ? '#6366f1' : '#64748b'
+                    }}>
+                      {business.plan.charAt(0).toUpperCase() + business.plan.slice(1)}
+                    </span>
+                    {business.plan !== 'free' && (
+                      <span className={`badge ${
+                        business.planStatus === 'cancelled' ? 'badge-warning' :
+                        business.planStatus === 'past_due' ? 'badge-danger' : 'badge-success'
+                      }`} style={{ fontSize: '0.65rem' }}>
+                        {business.planStatus === 'cancelled' ? '⚠ Cancels Soon' :
+                         business.planStatus === 'past_due' ? '❌ Past Due' : '✓ Active'}
+                      </span>
+                    )}
+                  </div>
+                  {business.plan !== 'free' && business.planExpiresAt && (
+                    <span style={{ fontSize: '0.78rem', opacity: 0.65 }}>
+                      {business.planStatus === 'cancelled' ? 'Access until' : 'Renews on'}{' '}
+                      <strong>{new Date(business.planExpiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>
+                    </span>
+                  )}
+                  {business.plan === 'free' && (
+                    <span style={{ fontSize: '0.78rem', opacity: 0.6 }}>Free forever · Upgrade to unlock automation</span>
+                  )}
+                </div>
+
+                {/* Plan price badge */}
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--primary)' }}>
+                    {business.plan === 'free' ? '₹0' : business.plan === 'growth' ? '₹499' : '₹1,499'}
+                  </div>
+                  {business.plan !== 'free' && (
+                    <div style={{ fontSize: '0.75rem', opacity: 0.6 }}>per month</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Upgrade Options */}
+              {business.plan !== 'pro' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 700, opacity: 0.7 }}>UPGRADE YOUR PLAN</span>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+
+                    {/* Growth Plan Card */}
+                    {business.plan !== 'growth' && (
+                      <div style={{ border: '2px solid #6366f1', borderRadius: '12px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontWeight: 700, color: '#6366f1' }}>Growth Plan</span>
+                          <span style={{ fontWeight: 800, color: '#6366f1' }}>₹499/mo</span>
+                        </div>
+                        <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.8rem', opacity: 0.8 }}>
+                          <li>✓ WhatsApp Auto-Reminders</li>
+                          <li>✓ Google Calendar Sync</li>
+                          <li>✓ Unlimited Services</li>
+                          <li>✓ 3 Staff Profiles</li>
+                        </ul>
+                        <button
+                          onClick={() => handleUpgrade('growth')}
+                          disabled={paymentLoading === 'growth'}
+                          className="btn btn-primary btn-sm"
+                          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
+                        >
+                          {paymentLoading === 'growth' ? (
+                            <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Processing...</>
+                          ) : (
+                            <><CreditCard size={14} /> Upgrade to Growth</>
+                          )}
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Pro Plan Card */}
+                    <div style={{ border: '2px solid #a855f7', borderRadius: '12px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontWeight: 700, color: '#a855f7' }}>Pro Plan</span>
+                        <span style={{ fontWeight: 800, color: '#a855f7' }}>₹1,499/mo</span>
+                      </div>
+                      <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.8rem', opacity: 0.8 }}>
+                        <li>✓ WhatsApp AI Chatbot Flow</li>
+                        <li>✓ Auto-Confirm Bookings</li>
+                        <li>✓ Up to 10 Staff Profiles</li>
+                        <li>✓ Priority WhatsApp Support</li>
+                      </ul>
+                      <button
+                        onClick={() => handleUpgrade('pro')}
+                        disabled={paymentLoading === 'pro'}
+                        className="btn btn-sm"
+                        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', background: '#a855f7', color: 'white', border: 'none', cursor: 'pointer' }}
+                      >
+                        {paymentLoading === 'pro' ? (
+                          <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Processing...</>
+                        ) : (
+                          <><CreditCard size={14} /> Upgrade to Pro</>
+                        )}
+                      </button>
+                    </div>
+
+                  </div>
+                </div>
+              )}
+
+              {/* Cancel Subscription */}
+              {business.plan !== 'free' && business.razorpaySubscriptionId && business.planStatus === 'active' && (
+                <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+                  <div style={{ fontSize: '0.8rem', opacity: 0.6 }}>
+                    <ShieldCheck size={14} style={{ display: 'inline', marginRight: '4px', color: '#10b981' }} />
+                    Payments secured by Razorpay. Cancel anytime, retain access until period ends.
+                  </div>
+                  <button
+                    onClick={handleCancelSubscription}
+                    disabled={cancelLoading}
+                    className="btn btn-sm"
+                    style={{ color: '#ef4444', border: '1px solid #ef4444', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem' }}
+                  >
+                    {cancelLoading ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <AlertTriangle size={12} />}
+                    Cancel Subscription
+                  </button>
+                </div>
+              )}
+
+              {/* Already cancelled notice */}
+              {business.planStatus === 'cancelled' && business.planExpiresAt && (
+                <div style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '8px', padding: '0.75rem', fontSize: '0.85rem', color: '#d97706' }}>
+                  ⚠ Your subscription is cancelled. You have full access until{' '}
+                  <strong>{new Date(business.planExpiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>.
+                  After that, the account will revert to the Free plan.
+                </div>
+              )}
+            </div>
+
+            {/* Business Details Form */}
             <form 
               onSubmit={async (e) => {
                 e.preventDefault();
@@ -1398,16 +1588,8 @@ export default function MerchantDashboard() {
                   const res = await fetch("/api/businesses", {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      id: business.id,
-                      name,
-                      category,
-                      phone,
-                      city,
-                      description
-                    })
+                    body: JSON.stringify({ id: business.id, name, category, phone, city, description })
                   });
-
                   if (res.ok) {
                     const updated = await res.json();
                     setBusiness(updated);
@@ -1418,30 +1600,21 @@ export default function MerchantDashboard() {
                   }
                 } catch (err) {
                   console.error(err);
-                  alert("Failed to update business settings.");
+                  showToast("Failed to update business settings.", "error");
                 }
               }}
               className="glass-card" 
               style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', background: 'var(--card)' }}
             >
+              <h4 style={{ fontWeight: 700, fontSize: '0.95rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>Business Details</h4>
               <div className="grid-2">
                 <div className="form-group">
                   <label className="form-label">Business Name</label>
-                  <input 
-                    name="bizName"
-                    type="text" 
-                    required 
-                    defaultValue={business.name}
-                    className="form-input"
-                  />
+                  <input name="bizName" type="text" required defaultValue={business.name} className="form-input" />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Category</label>
-                  <select 
-                    name="bizCategory"
-                    defaultValue={business.category}
-                    className="form-select"
-                  >
+                  <select name="bizCategory" defaultValue={business.category} className="form-select">
                     <option value="Salons & Beauty Parlours">Salons & Beauty Parlours</option>
                     <option value="Gyms & Yoga Studios">Gyms & Yoga Studios</option>
                     <option value="Clinics & Doctors">Clinics & Doctors</option>
@@ -1450,40 +1623,20 @@ export default function MerchantDashboard() {
                   </select>
                 </div>
               </div>
-
               <div className="grid-2">
                 <div className="form-group">
                   <label className="form-label">WhatsApp Phone Number</label>
-                  <input 
-                    name="bizPhone"
-                    type="tel" 
-                    required 
-                    defaultValue={business.phone}
-                    className="form-input"
-                  />
+                  <input name="bizPhone" type="tel" required defaultValue={business.phone} className="form-input" />
                 </div>
                 <div className="form-group">
                   <label className="form-label">City Location</label>
-                  <input 
-                    name="bizCity"
-                    type="text" 
-                    required 
-                    defaultValue={business.city}
-                    className="form-input"
-                  />
+                  <input name="bizCity" type="text" required defaultValue={business.city} className="form-input" />
                 </div>
               </div>
-
               <div className="form-group">
                 <label className="form-label">Brief Description</label>
-                <textarea 
-                  name="bizDesc"
-                  defaultValue={business.description}
-                  rows={3}
-                  className="form-textarea"
-                />
+                <textarea name="bizDesc" defaultValue={business.description} rows={3} className="form-textarea" />
               </div>
-
               <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <button type="submit" className="btn btn-primary btn-sm">Save Settings</button>
               </div>

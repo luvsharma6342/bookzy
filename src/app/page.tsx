@@ -1,6 +1,6 @@
-﻿'use client';
+'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -21,9 +21,12 @@ import {
   Languages,
   Mail,
   Phone,
-  MapPin
+  MapPin,
+  CreditCard,
+  Loader2
 } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
+import { useRazorpay } from '@/hooks/useRazorpay';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -32,7 +35,56 @@ export default function LandingPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isHindi, setIsHindi] = useState(false);
   const [screenshotTab, setScreenshotTab] = useState<'storefront' | 'dashboard' | 'whatsapp'>('storefront');
+  const [paymentLoading, setPaymentLoading] = useState<string | null>(null);
+  const [pricingToast, setPricingToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const { data: session } = authClient.useSession();
+  const { openCheckout } = useRazorpay();
+
+  const showPricingToast = (msg: string, type: 'success' | 'error' = 'success') => {
+    setPricingToast({ msg, type });
+    setTimeout(() => setPricingToast(null), 5000);
+  };
+
+  const handlePricingClick = async (plan: 'growth' | 'pro') => {
+    // If not logged in, redirect to auth with plan intent
+    if (!session?.user) {
+      router.push(`/auth?redirect=pricing&plan=${plan}`);
+      return;
+    }
+
+    // Fetch the user's first business to attach the subscription to
+    let businessId: string | null = null;
+    try {
+      const res = await fetch('/api/businesses');
+      if (res.ok) {
+        const bizList = await res.json();
+        businessId = bizList?.[0]?.id || null;
+      }
+    } catch { /* ignore */ }
+
+    if (!businessId) {
+      showPricingToast('Please create a business storefront first before upgrading.', 'error');
+      router.push('/dashboard');
+      return;
+    }
+
+    setPaymentLoading(plan);
+    await openCheckout({
+      plan,
+      businessId,
+      onSuccess: (upgradedPlan) => {
+        setPaymentLoading(null);
+        showPricingToast(`🎉 Successfully upgraded to ${upgradedPlan.charAt(0).toUpperCase() + upgradedPlan.slice(1)} plan! Redirecting to dashboard...`, 'success');
+        setTimeout(() => router.push('/dashboard'), 2500);
+      },
+      onError: (err) => {
+        setPaymentLoading(null);
+        if (!err.includes('cancelled')) {
+          showPricingToast(err, 'error');
+        }
+      },
+    });
+  };
 
   const handleGenerateLink = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -661,6 +713,19 @@ export default function LandingPage() {
                 </ul>
               </div>
               <a href="#demo" className="btn btn-secondary" style={{ width: '100%', marginTop: '2rem' }}>{isHindi ? 'फ्री बनाएं' : 'Create Free Link'}</a>
+
+      {/* Pricing Toast */}
+      {pricingToast && (
+        <div style={{
+          position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)',
+          background: pricingToast.type === 'success' ? '#10b981' : '#ef4444',
+          color: 'white', padding: '0.85rem 1.5rem', borderRadius: '12px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.2)', zIndex: 9999,
+          fontSize: '0.95rem', fontWeight: 600, maxWidth: '90vw', textAlign: 'center'
+        }}>
+          {pricingToast.msg}
+        </div>
+      )}
             </div>
 
             {/* Growth Plan */}
@@ -685,7 +750,18 @@ export default function LandingPage() {
                   <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><CheckCircle size={16} style={{ color: '#6366f1' }} /> {isHindi ? '3 स्टाफ मेंबर्स' : '3 Staff Member Profiles'}</li>
                 </ul>
               </div>
-              <a href="#demo" className="btn btn-primary" style={{ width: '100%', marginTop: '2rem' }}>{isHindi ? 'ग्रोथ शुरू करें' : 'Get Growth'}</a>
+              <button
+                onClick={() => handlePricingClick('growth')}
+                disabled={paymentLoading === 'growth'}
+                className="btn btn-primary"
+                style={{ width: '100%', marginTop: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+              >
+                {paymentLoading === 'growth' ? (
+                  <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> {isHindi ? 'लोड हो रहा है...' : 'Loading...'}</>
+                ) : (
+                  <><CreditCard size={16} /> {isHindi ? 'ग्रोथ शुरू करें — ₹499/महीना' : 'Get Growth — ₹499/mo'}</>
+                )}
+              </button>
             </div>
 
             {/* Pro Plan */}
@@ -707,7 +783,18 @@ export default function LandingPage() {
                   <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><CheckCircle size={16} style={{ color: '#10b981' }} /> {isHindi ? 'प्रीमियम व्हाट्सएप सपोर्ट' : 'Priority WhatsApp Support'}</li>
                 </ul>
               </div>
-              <a href="#demo" className="btn btn-secondary" style={{ width: '100%', marginTop: '2rem' }}>{isHindi ? 'प्रो शुरू करें' : 'Get Pro'}</a>
+              <button
+                onClick={() => handlePricingClick('pro')}
+                disabled={paymentLoading === 'pro'}
+                className="btn btn-secondary"
+                style={{ width: '100%', marginTop: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+              >
+                {paymentLoading === 'pro' ? (
+                  <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> {isHindi ? 'लोड हो रहा है...' : 'Loading...'}</>
+                ) : (
+                  <><CreditCard size={16} /> {isHindi ? 'प्रो शुरू करें — ₹1,499/महीना' : 'Get Pro — ₹1,499/mo'}</>
+                )}
+              </button>
             </div>
 
           </div>

@@ -1,4 +1,4 @@
-﻿// Mock database engine for Bookze, persisting data to localStorage for local demonstrability
+// Mock database engine for Bookze, persisting data to localStorage for local demonstrability
 
 export interface Business {
   id: string;
@@ -11,12 +11,16 @@ export interface Business {
   logoUrl?: string;
   coverUrl?: string;
   workingHours: {
-    [key: string]: { open: string; close: string; closed: boolean }; // monday, tuesday...
+    [key: string]: { open: string; close: string; closed: boolean };
   };
   plan: 'free' | 'growth' | 'pro';
+  planStatus?: 'active' | 'cancelled' | 'past_due';
+  planExpiresAt?: string | null;
+  razorpaySubscriptionId?: string | null;
   reviewsCount: number;
   rating: number;
 }
+
 
 export interface Service {
   id: string;
