@@ -842,7 +842,7 @@ export default function MerchantDashboard() {
               {/* Traffic Area Chart */}
               <div className="glass-card">
                 <h4 style={{ fontSize: '1.05rem', marginBottom: '1.25rem' }}>Traffic vs Booking conversion</h4>
-                <div style={{ width: '100%', height: '280px' }}>
+                <div style={{ width: '100%', height: '280px', transform: 'translate3d(0,0,0)', willChange: 'transform', position: 'relative' }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                       <defs>
@@ -869,7 +869,7 @@ export default function MerchantDashboard() {
               {/* Source Distribution Bar Chart */}
               <div className="glass-card">
                 <h4 style={{ fontSize: '1.05rem', marginBottom: '1.25rem' }}>Booking Entry Points Distribution</h4>
-                <div style={{ width: '100%', height: '280px' }}>
+                <div style={{ width: '100%', height: '280px', transform: 'translate3d(0,0,0)', willChange: 'transform', position: 'relative' }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={sourceData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
