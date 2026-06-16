@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -37,8 +37,15 @@ export default function LandingPage() {
   const [screenshotTab, setScreenshotTab] = useState<'storefront' | 'dashboard' | 'whatsapp'>('storefront');
   const [paymentLoading, setPaymentLoading] = useState<string | null>(null);
   const [pricingToast, setPricingToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
-  const { data: session } = authClient.useSession();
+  const { data: session, isPending } = authClient.useSession();
   const { openCheckout } = useRazorpay();
+
+  // Redirect logged-in merchants straight to their dashboard
+  useEffect(() => {
+    if (!isPending && session?.user) {
+      router.replace('/dashboard');
+    }
+  }, [session, isPending, router]);
 
   const showPricingToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setPricingToast({ msg, type });

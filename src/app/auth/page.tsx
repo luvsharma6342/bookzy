@@ -33,8 +33,11 @@ function AuthForm() {
     setError("");
     setLoading(true);
     try {
-      await authClient.signIn.social({ provider: "google" });
-      // better-auth will redirect automatically after OAuth flow
+      await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/auth/onboard",
+      });
+      // better-auth redirects to /auth/onboard after OAuth completes
     } catch (err: any) {
       setError(err.message || "Google sign-in failed. Please try again.");
       setLoading(false);
