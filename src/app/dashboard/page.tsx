@@ -39,7 +39,10 @@ import {
   CreditCard,
   Loader2,
   AlertTriangle,
-  ShieldCheck
+  ShieldCheck,
+  Copy,
+  QrCode,
+  Share2
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -98,6 +101,21 @@ export default function MerchantDashboard() {
 
   // Toast notifications
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  // Share tools state
+  const [copyLinkCopied, setCopyLinkCopied] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
+
+  // Add Manual Booking modal state
+  const [showAddBookingModal, setShowAddBookingModal] = useState(false);
+  const [addBkLoading, setAddBkLoading] = useState(false);
+  const [addBkCustomerName, setAddBkCustomerName] = useState('');
+  const [addBkCustomerPhone, setAddBkCustomerPhone] = useState('');
+  const [addBkServiceId, setAddBkServiceId] = useState('');
+  const [addBkStaffId, setAddBkStaffId] = useState('');
+  const [addBkDateTime, setAddBkDateTime] = useState('');
+  const [addBkPrice, setAddBkPrice] = useState(0);
+  const [addBkNotes, setAddBkNotes] = useState('');
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
@@ -349,6 +367,71 @@ export default function MerchantDashboard() {
     a.setAttribute('href', url);
     a.setAttribute('download', `${business.slug}-customers.csv`);
     a.click();
+  };
+
+  // Copy storefront link to clipboard
+  const handleCopyLink = async () => {
+    if (!business) return;
+    const url = `${window.location.origin}/book/${business.slug}`;
+    await navigator.clipboard.writeText(url);
+    setCopyLinkCopied(true);
+    setTimeout(() => setCopyLinkCopied(false), 2500);
+  };
+
+  // Share to WhatsApp
+  const handleWhatsAppShare = () => {
+    if (!business) return;
+    const url = `${window.location.origin}/book/${business.slug}`;
+    const text = encodeURIComponent(`Book your appointment at *${business.name}*:\n${url}`);
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+  };
+
+  // Reset + close Add Booking modal
+  const closeAddBookingModal = () => {
+    setShowAddBookingModal(false);
+    setAddBkCustomerName('');
+    setAddBkCustomerPhone('');
+    setAddBkServiceId('');
+    setAddBkStaffId('');
+    setAddBkDateTime('');
+    setAddBkPrice(0);
+    setAddBkNotes('');
+  };
+
+  // Submit manual booking
+  const handleAddManualBooking = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!business || !addBkServiceId || !addBkDateTime) return;
+    setAddBkLoading(true);
+    try {
+      const res = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessId: business.id,
+          serviceId: addBkServiceId,
+          staffId: addBkStaffId || null,
+          customerName: addBkCustomerName,
+          customerPhone: addBkCustomerPhone,
+          bookingTime: new Date(addBkDateTime).toISOString(),
+          price: addBkPrice,
+          bookingSource: 'manual',
+          notes: addBkNotes,
+        }),
+      });
+      if (res.ok) {
+        closeAddBookingModal();
+        showToast('✅ Booking added successfully!', 'success');
+        await reloadData(business.id);
+      } else {
+        const err = await res.json();
+        showToast(err.error || 'Failed to add booking', 'error');
+      }
+    } catch {
+      showToast('Network error. Please try again.', 'error');
+    } finally {
+      setAddBkLoading(false);
+    }
   };
 
   // CALCULATE ANALYTICS STATS
@@ -706,10 +789,42 @@ export default function MerchantDashboard() {
             )}
           </div>
 
-          <Link href={`/book/${business.slug}`} target="_blank" className="btn btn-outline btn-sm" style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '0.25rem' }}>
-            <span>Live Storefront</span>
+          {/* Share / Storefront Tools */}
+          <Link href={`/book/${business.slug}`} target="_blank" className="btn btn-outline btn-sm" style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '0.35rem', fontSize: '0.8rem' }}>
             <ExternalLink size={12} />
+            <span>Live Storefront</span>
           </Link>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem' }}>
+            <button
+              onClick={handleCopyLink}
+              className="btn btn-outline btn-sm"
+              style={{ fontSize: '0.72rem', gap: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              title="Copy booking link to clipboard"
+            >
+              {copyLinkCopied ? <Check size={12} style={{ color: '#10b981' }} /> : <Copy size={12} />}
+              {copyLinkCopied ? 'Copied!' : 'Copy Link'}
+            </button>
+            <button
+              onClick={handleWhatsAppShare}
+              className="btn btn-outline btn-sm"
+              style={{ fontSize: '0.72rem', gap: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#25d366', borderColor: 'rgba(37,211,102,0.4)' }}
+              title="Share via WhatsApp"
+            >
+              <Share2 size={12} /> WhatsApp
+            </button>
+          </div>
+
+          {business.plan !== 'free' && (
+            <button
+              onClick={() => setShowQRModal(true)}
+              className="btn btn-outline btn-sm"
+              style={{ width: '100%', fontSize: '0.72rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}
+              title="Show QR code for this storefront"
+            >
+              <QrCode size={12} /> Show QR Code
+            </button>
+          )}
           
           <Link href="/" className="btn btn-secondary btn-sm" style={{ width: '100%' }}>
             ← Platform Home
@@ -917,10 +1032,18 @@ export default function MerchantDashboard() {
                 ))}
               </div>
 
-              {/* CRM download details */}
-              <button onClick={handleCSVExport} className="btn btn-outline btn-sm">
-                <FileSpreadsheet size={16} /> Export Customers (CSV)
-              </button>
+              {/* Right-side action buttons */}
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => setShowAddBookingModal(true)}
+                  className="btn btn-primary btn-sm"
+                >
+                  <Plus size={15} /> Add Booking
+                </button>
+                <button onClick={handleCSVExport} className="btn btn-outline btn-sm">
+                  <FileSpreadsheet size={16} /> Export CSV
+                </button>
+              </div>
             </div>
 
             {/* Bookings Data Table */}
@@ -1645,6 +1768,223 @@ export default function MerchantDashboard() {
         )}
 
       </main>
+
+      {/* ─── ADD MANUAL BOOKING MODAL ─────────────────────────────── */}
+      <AnimatePresence>
+        {showAddBookingModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+            onClick={(e) => { if (e.target === e.currentTarget) closeAddBookingModal(); }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.18 }}
+              style={{ background: 'var(--card)', borderRadius: '16px', padding: '2rem', maxWidth: '540px', width: '100%', position: 'relative', maxHeight: '90vh', overflowY: 'auto', border: '1px solid var(--border)' }}
+            >
+              {/* Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Add Manual Booking</h3>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--muted)', marginTop: '0.2rem' }}>Walk-in, phone, or in-person appointment</p>
+                </div>
+                <button onClick={closeAddBookingModal} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: '0.25rem' }}>
+                  <X size={20} />
+                </button>
+              </div>
+
+              <form onSubmit={handleAddManualBooking} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {/* Customer info */}
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label">Customer Name *</label>
+                    <input
+                      type="text"
+                      required
+                      className="form-input"
+                      placeholder="e.g. Rohan Verma"
+                      value={addBkCustomerName}
+                      onChange={(e) => setAddBkCustomerName(e.target.value)}
+                      autoFocus
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">WhatsApp Phone *</label>
+                    <input
+                      type="tel"
+                      required
+                      className="form-input"
+                      placeholder="+91 98765 43210"
+                      value={addBkCustomerPhone}
+                      onChange={(e) => setAddBkCustomerPhone(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {/* Service + Staff */}
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label">Service *</label>
+                    <select
+                      required
+                      className="form-select"
+                      value={addBkServiceId}
+                      onChange={(e) => {
+                        setAddBkServiceId(e.target.value);
+                        const svc = services.find(s => s.id === e.target.value);
+                        if (svc) setAddBkPrice(svc.price);
+                      }}
+                    >
+                      <option value="">Select a service...</option>
+                      {services.filter(s => s.active).map(s => (
+                        <option key={s.id} value={s.id}>{s.name} — ₹{s.price}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Staff Member</label>
+                    <select
+                      className="form-select"
+                      value={addBkStaffId}
+                      onChange={(e) => setAddBkStaffId(e.target.value)}
+                    >
+                      <option value="">Any / Not assigned</option>
+                      {staffList.map(st => (
+                        <option key={st.id} value={st.id}>{st.name} — {st.role}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Date/Time + Price */}
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label">Date &amp; Time *</label>
+                    <input
+                      type="datetime-local"
+                      required
+                      className="form-input"
+                      value={addBkDateTime}
+                      onChange={(e) => setAddBkDateTime(e.target.value)}
+                      min={new Date().toISOString().slice(0, 16)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Price (₹)</label>
+                    <input
+                      type="number"
+                      required
+                      min={0}
+                      step={0.01}
+                      className="form-input"
+                      value={addBkPrice}
+                      onChange={(e) => setAddBkPrice(parseFloat(e.target.value) || 0)}
+                    />
+                  </div>
+                </div>
+
+                {/* Notes */}
+                <div className="form-group">
+                  <label className="form-label">Notes (Optional)</label>
+                  <textarea
+                    className="form-textarea"
+                    rows={2}
+                    placeholder="Special requests, preferences, or internal notes..."
+                    value={addBkNotes}
+                    onChange={(e) => setAddBkNotes(e.target.value)}
+                  />
+                </div>
+
+                {/* Actions */}
+                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', paddingTop: '0.25rem' }}>
+                  <button type="button" onClick={closeAddBookingModal} className="btn btn-outline btn-sm">Cancel</button>
+                  <button
+                    type="submit"
+                    disabled={addBkLoading}
+                    className="btn btn-primary btn-sm"
+                    style={{ minWidth: '140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
+                  >
+                    {addBkLoading
+                      ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Adding...</>
+                      : <><Plus size={14} /> Add Booking</>
+                    }
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ─── QR CODE MODAL ────────────────────────────────────────── */}
+      <AnimatePresence>
+        {showQRModal && business && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+            onClick={(e) => { if (e.target === e.currentTarget) setShowQRModal(false); }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 20 }}
+              transition={{ duration: 0.18 }}
+              style={{ background: 'var(--card)', borderRadius: '20px', padding: '2rem', maxWidth: '320px', width: '100%', display: 'flex', flexDirection: 'column', gap: '1.25rem', alignItems: 'center', position: 'relative', border: '1px solid var(--border)' }}
+            >
+              <button onClick={() => setShowQRModal(false)} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--muted)' }}>
+                <X size={18} />
+              </button>
+
+              <div style={{ textAlign: 'center' }}>
+                <h4 style={{ fontSize: '1.1rem', fontWeight: 700 }}>📲 Scan to Book</h4>
+                <p style={{ fontSize: '0.8rem', color: 'var(--muted)', marginTop: '0.25rem' }}>{business.name}</p>
+              </div>
+
+              {/* QR via free API — no npm package needed */}
+              <div style={{ background: 'white', borderRadius: '12px', padding: '1rem', display: 'inline-flex' }}>
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(`${typeof window !== 'undefined' ? window.location.origin : 'https://bookze.vercel.app'}/book/${business.slug}`)}&color=090d16&bgcolor=ffffff`}
+                  alt="Booking QR Code"
+                  width={180}
+                  height={180}
+                  style={{ display: 'block', borderRadius: '6px' }}
+                />
+              </div>
+
+              <p style={{ fontSize: '0.78rem', color: 'var(--muted)', textAlign: 'center', lineHeight: 1.5 }}>
+                Print this QR at your counter. Customers scan to instantly open your booking page.
+              </p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%' }}>
+                <a
+                  href={`https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(`${typeof window !== 'undefined' ? window.location.origin : 'https://bookze.vercel.app'}/book/${business.slug}`)}&color=090d16&bgcolor=ffffff`}
+                  download={`${business.slug}-qr-code.png`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-primary btn-sm"
+                  style={{ width: '100%', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}
+                >
+                  ⬇️ Download QR (600×600)
+                </a>
+                <button
+                  onClick={handleCopyLink}
+                  className="btn btn-outline btn-sm"
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}
+                >
+                  {copyLinkCopied ? <Check size={13} style={{ color: '#10b981' }} /> : <Copy size={13} />}
+                  {copyLinkCopied ? 'Link Copied!' : 'Copy Booking Link'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <style jsx>{`
         .table-row-hover:hover {
