@@ -42,7 +42,8 @@ import {
   ShieldCheck,
   Copy,
   QrCode,
-  Share2
+  Share2,
+  Pencil
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -88,6 +89,15 @@ export default function MerchantDashboard() {
   const [newServiceDuration, setNewServiceDuration] = useState(30);
   const [newServiceCategory, setNewServiceCategory] = useState('Hair Care');
   const [newServiceDesc, setNewServiceDesc] = useState('');
+
+  // Edit Service Modal State
+  const [editingService, setEditingService] = useState<Service | null>(null);
+  const [editSvcName, setEditSvcName] = useState('');
+  const [editSvcPrice, setEditSvcPrice] = useState(0);
+  const [editSvcDuration, setEditSvcDuration] = useState(30);
+  const [editSvcCategory, setEditSvcCategory] = useState('Hair Care');
+  const [editSvcDesc, setEditSvcDesc] = useState('');
+  const [editSvcLoading, setEditSvcLoading] = useState(false);
 
   // Simulation state variables
   const [wabaConnected, setWabaConnected] = useState(true);
@@ -306,6 +316,51 @@ export default function MerchantDashboard() {
       }
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  // Open edit modal pre-filled with service data
+  const openEditService = (svc: Service) => {
+    setEditingService(svc);
+    setEditSvcName(svc.name);
+    setEditSvcPrice(svc.price);
+    setEditSvcDuration(svc.duration);
+    setEditSvcCategory(svc.category);
+    setEditSvcDesc(svc.description);
+  };
+
+  // Submit edited service — POST with id triggers update in API
+  const handleEditServiceSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingService || !business) return;
+    setEditSvcLoading(true);
+    try {
+      const res = await fetch('/api/services', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingService.id,
+          businessId: business.id,
+          name: editSvcName,
+          price: editSvcPrice,
+          duration: editSvcDuration,
+          category: editSvcCategory,
+          description: editSvcDesc,
+          active: editingService.active,
+        }),
+      });
+      if (res.ok) {
+        setEditingService(null);
+        showToast('Service updated successfully!', 'success');
+        await reloadData(business.id);
+      } else {
+        const err = await res.json();
+        showToast(err.error || 'Failed to update service', 'error');
+      }
+    } catch {
+      showToast('Network error. Please try again.', 'error');
+    } finally {
+      setEditSvcLoading(false);
     }
   };
 
@@ -1273,8 +1328,8 @@ export default function MerchantDashboard() {
                       </div>
                     </div>
 
-                    {/* Enable / Disable and Delete */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    {/* Enable / Disable, Edit, and Delete */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>{svc.active ? 'Active' : 'Disabled'}</span>
                         
@@ -1288,6 +1343,16 @@ export default function MerchantDashboard() {
                         </label>
                       </div>
 
+                      {/* Edit button */}
+                      <button
+                        onClick={() => openEditService(svc)}
+                        title="Edit service"
+                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--primary)', opacity: 0.8, padding: '0.2rem' }}
+                      >
+                        <Pencil size={15} />
+                      </button>
+
+                      {/* Delete button */}
                       <button 
                         onClick={() => {
                           if (confirm('Delete this service from catalog?')) {
@@ -1295,7 +1360,8 @@ export default function MerchantDashboard() {
                               .then(() => reloadData(business.id));
                           }
                         }}
-                        style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', opacity: 0.6 }}
+                        title="Delete service"
+                        style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', opacity: 0.6, padding: '0.2rem' }}
                       >
                         <X size={16} />
                       </button>
@@ -1981,6 +2047,129 @@ export default function MerchantDashboard() {
                   {copyLinkCopied ? 'Link Copied!' : 'Copy Booking Link'}
                 </button>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ─── EDIT SERVICE MODAL ──────────────────────────────────── */}
+      <AnimatePresence>
+        {editingService && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+            onClick={(e) => { if (e.target === e.currentTarget) setEditingService(null); }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.18 }}
+              style={{ background: 'var(--card)', borderRadius: '16px', padding: '2rem', maxWidth: '520px', width: '100%', position: 'relative', border: '1px solid var(--border)', maxHeight: '90vh', overflowY: 'auto' }}
+            >
+              {/* Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Edit Service</h3>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--muted)', marginTop: '0.2rem' }}>
+                    Editing: <strong>{editingService.name}</strong>
+                  </p>
+                </div>
+                <button onClick={() => setEditingService(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: '0.25rem' }}>
+                  <X size={20} />
+                </button>
+              </div>
+
+              <form onSubmit={handleEditServiceSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {/* Name + Category */}
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label">Service Name *</label>
+                    <input
+                      type="text"
+                      required
+                      className="form-input"
+                      value={editSvcName}
+                      onChange={(e) => setEditSvcName(e.target.value)}
+                      autoFocus
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Category</label>
+                    <select
+                      className="form-select"
+                      value={editSvcCategory}
+                      onChange={(e) => setEditSvcCategory(e.target.value)}
+                    >
+                      <option value="Hair Care">Hair Care</option>
+                      <option value="Skincare">Skincare</option>
+                      <option value="Nail Care">Nail Care</option>
+                      <option value="Makeup">Makeup</option>
+                      <option value="Personal Training">Personal Training</option>
+                      <option value="Group Classes">Group Classes</option>
+                      <option value="Consultation">Consultation</option>
+                      <option value="General">General</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Price + Duration */}
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label">Price (₹) *</label>
+                    <input
+                      type="number"
+                      required
+                      min={0}
+                      step={0.01}
+                      className="form-input"
+                      value={editSvcPrice}
+                      onChange={(e) => setEditSvcPrice(parseFloat(e.target.value) || 0)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Duration (Minutes) *</label>
+                    <input
+                      type="number"
+                      required
+                      min={5}
+                      className="form-input"
+                      value={editSvcDuration}
+                      onChange={(e) => setEditSvcDuration(parseInt(e.target.value) || 5)}
+                    />
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div className="form-group">
+                  <label className="form-label">Description</label>
+                  <textarea
+                    className="form-textarea"
+                    rows={2}
+                    placeholder="Briefly describe what this service includes..."
+                    value={editSvcDesc}
+                    onChange={(e) => setEditSvcDesc(e.target.value)}
+                  />
+                </div>
+
+                {/* Actions */}
+                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', paddingTop: '0.25rem' }}>
+                  <button type="button" onClick={() => setEditingService(null)} className="btn btn-outline btn-sm">Cancel</button>
+                  <button
+                    type="submit"
+                    disabled={editSvcLoading}
+                    className="btn btn-primary btn-sm"
+                    style={{ minWidth: '140px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
+                  >
+                    {editSvcLoading
+                      ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Saving...</>
+                      : <><Check size={14} /> Save Changes</>
+                    }
+                  </button>
+                </div>
+              </form>
             </motion.div>
           </motion.div>
         )}

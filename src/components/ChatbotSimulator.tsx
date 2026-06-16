@@ -1,7 +1,7 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { db, Business, Service, Booking } from '@/lib/db';
+import { Business, Service } from '@/lib/db';
 import { Send, Check, CheckCheck, Phone, Video, MoreVertical, X } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -29,7 +29,7 @@ export default function ChatbotSimulator({
   isHindi = false
 }: ChatbotSimulatorProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [currentStep, setCurrentStep] = useState<'service' | 'date' | 'time' | 'name' | 'complete'>('service');
+  const [currentStep, setCurrentStep] = useState<'service' | 'date' | 'time' | 'name' | 'phone' | 'complete'>('service');
   const [isTyping, setIsTyping] = useState(false);
   
   // Selection States
@@ -37,6 +37,7 @@ export default function ChatbotSimulator({
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [customerName, setCustomerName] = useState<string>('');
+  const [customerPhone, setCustomerPhone] = useState<string>('');
   const [textInput, setTextInput] = useState<string>('');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -128,7 +129,7 @@ export default function ChatbotSimulator({
     simulateBotReply(replyText, 'name');
   };
 
-  // Step 4: Name Submitted
+  // Step 4: Name Submitted — collect name then ask for phone
   const handleNameSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!textInput.trim()) return;
@@ -138,45 +139,87 @@ export default function ChatbotSimulator({
     addMessage('user', nameVal);
     setTextInput('');
 
+    const replyText = isHindi
+      ? `शुक्रिया, *${nameVal}*! 📱\n\nअब कृपया अपना WhatsApp नंबर टाइप करें ताकि हम आपको रिमाइंडर भेज सकें:\n(उदाहरण: 9876543210)`
+      : `Thanks, *${nameVal}*! 📱\n\nNow please enter your WhatsApp phone number so we can send you a reminder:\n(e.g. 9876543210)`;
+
+    simulateBotReply(replyText, 'phone');
+  };
+
+  // Step 5: Phone Submitted — validate and create booking via real API
+  const handlePhoneSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!textInput.trim()) return;
+
+    const phoneVal = textInput.trim().replace(/\s+/g, '');
+
+    // Basic validation: must be 10 digits (or start with + for intl)
+    const isValid = /^[+]?[0-9]{10,15}$/.test(phoneVal);
+    if (!isValid) {
+      addMessage('user', phoneVal);
+      setTextInput('');
+      simulateBotReply(
+        isHindi
+          ? '❌ कृपया एक सही फोन नंबर दर्ज करें (10 अंक)।'
+          : '❌ Please enter a valid phone number (10 digits).',
+        'phone',
+        800
+      );
+      return;
+    }
+
+    setCustomerPhone(phoneVal);
+    addMessage('user', phoneVal);
+    setTextInput('');
     setIsTyping(true);
-    setTimeout(() => {
+
+    // Brief delay so the typing indicator is visible before the API call
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    try {
+      const res = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessId: business.id,
+          serviceId: selectedService!.id,
+          customerName,
+          customerPhone: phoneVal,
+          bookingTime: getBookingISOTime(selectedDate, selectedTime),
+          price: selectedService!.price,
+          bookingSource: 'chatbot',
+          notes: 'Booked via Pro Chatbot',
+        }),
+      });
+
       setIsTyping(false);
-      
-      // Save the booking to mock db
-      const newBooking: Booking = {
-        id: `bk-bot-${Date.now()}`,
-        businessId: business.id,
-        serviceId: selectedService!.id,
-        customerName: nameVal,
-        customerPhone: '+919999988888',
-        bookingTime: getBookingISOTime(selectedDate, selectedTime),
-        price: selectedService!.price,
-        status: 'confirmed',
-        bookingSource: 'chatbot',
-        notes: 'Booked via Pro Chatbot Simulator',
-        createdAt: new Date().toISOString()
-      };
-      
-      db.saveBooking(newBooking);
+
+      if (!res.ok) {
+        addMessage('bot', isHindi
+          ? '❌ माफ़ करें, बुकिंग बनाने में त्रुटि हुई। कृपया दोबारा कोशिश करें।'
+          : '❌ Sorry, there was an error creating your booking. Please try again.');
+        setCurrentStep('service');
+        return;
+      }
 
       const successText = isHindi
-        ? `🎉 *बुकिंग पक्की हो गई है!*\n\n📝 विवरण:\n• *सेवा:* ${selectedService!.name}\n• *तारीख:* ${selectedDate}\n• *समय:* ${selectedTime}\n• *ग्राहक:* ${nameVal}\n\nधन्यवाद! हम आपको अप्वाइंटमेंट से 2 घंटे पहले व्हाट्सएप पर रिमाइंडर भेजेंगे।`
-        : `🎉 *Booking Confirmed!*\n\n📝 Details:\n• *Service:* ${selectedService!.name}\n• *Date:* ${selectedDate}\n• *Time:* ${selectedTime}\n• *Customer:* ${nameVal}\n\nWe look forward to seeing you. A reminder will be sent 2 hours prior!`;
+        ? `🎉 *बुकिंग पक्की हो गई है!*\n\n📝 विवरण:\n• *सेवा:* ${selectedService!.name}\n• *तारीख:* ${selectedDate}\n• *समय:* ${selectedTime}\n• *नाम:* ${customerName}\n• *फोन:* ${phoneVal}\n\nधन्यवाद! हम आपको अप्वाइंटमेंट से 2 घंटे पहले व्हाट्सएप पर रिमाइंडर भेजेंगे।`
+        : `🎉 *Booking Confirmed!*\n\n📝 Details:\n• *Service:* ${selectedService!.name}\n• *Date:* ${selectedDate}\n• *Time:* ${selectedTime}\n• *Name:* ${customerName}\n• *Phone:* ${phoneVal}\n\nWe look forward to seeing you. A WhatsApp reminder will be sent 2 hours prior!`;
 
       addMessage('bot', successText);
       setCurrentStep('complete');
-      
-      // Celebrate
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.7 }
-      });
+
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.7 } });
 
       if (onBookingComplete) {
         onBookingComplete();
       }
-    }, 1500);
+    } catch {
+      setIsTyping(false);
+      addMessage('bot', isHindi
+        ? '❌ नेटवर्क त्रुटि। कृपया अपना इंटरनेट कनेक्शन जांचें और दोबारा कोशिश करें।'
+        : '❌ Network error. Please check your connection and try again.');
+    }
   };
 
   const getBookingISOTime = (dateString: string, timeString: string): string => {
@@ -377,11 +420,29 @@ export default function ChatbotSimulator({
           <form onSubmit={handleNameSubmit} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
             <input 
               type="text" 
-              placeholder={isHindi ? "अपना नाम यहाँ टाइप करें..." : "Type your name..."}
+              placeholder={isHindi ? "अपना नाम यहाँ टाइप करें..." : "Type your full name..."}
               value={textInput}
               onChange={(e) => setTextInput(e.target.value)}
               style={{ flex: 1, padding: '0.6rem 0.8rem', borderRadius: '20px', border: '1px solid #d4d0cc', background: 'white', fontSize: '0.9rem', outline: 'none' }}
               autoFocus
+            />
+            <button 
+              type="submit" 
+              style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', background: '#075e54', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer' }}
+            >
+              <Send size={16} />
+            </button>
+          </form>
+        ) : currentStep === 'phone' ? (
+          <form onSubmit={handlePhoneSubmit} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <input 
+              type="tel" 
+              placeholder={isHindi ? "WhatsApp नंबर (जैसे 9876543210)" : "WhatsApp number (e.g. 9876543210)"}
+              value={textInput}
+              onChange={(e) => setTextInput(e.target.value)}
+              style={{ flex: 1, padding: '0.6rem 0.8rem', borderRadius: '20px', border: '1px solid #25d366', background: 'white', fontSize: '0.9rem', outline: 'none' }}
+              autoFocus
+              inputMode="tel"
             />
             <button 
               type="submit" 
