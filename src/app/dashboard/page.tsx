@@ -43,7 +43,8 @@ import {
   Copy,
   QrCode,
   Share2,
-  Pencil
+  Pencil,
+  Search
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -81,6 +82,10 @@ export default function MerchantDashboard() {
 
   // Filtering Bookings
   const [bookingFilter, setBookingFilter] = useState<'all' | 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show'>('all');
+  const [bookingSearch, setBookingSearch] = useState('');
+  const [bookingDateFrom, setBookingDateFrom] = useState('');
+  const [bookingDateTo, setBookingDateTo] = useState('');
+  const [agendaCollapsed, setAgendaCollapsed] = useState(false);
 
   // Add Service Form State
   const [showAddService, setShowAddService] = useState(false);
@@ -560,10 +565,38 @@ export default function MerchantDashboard() {
 
   const sourceData = getSourceDistribution();
 
-  // Filtered bookings list
-  const filteredBookings = bookingFilter === 'all'
-    ? bookings
-    : bookings.filter(b => b.status === bookingFilter);
+  // Get today's bookings (chronological, non-cancelled)
+  const getTodayBookings = () => {
+    const now = new Date();
+    const localToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    return bookings
+      .filter(b => {
+        const bDate = new Date(b.bookingTime);
+        const bLocal = `${bDate.getFullYear()}-${String(bDate.getMonth() + 1).padStart(2, '0')}-${String(bDate.getDate()).padStart(2, '0')}`;
+        return bLocal === localToday && b.status !== 'cancelled';
+      })
+      .sort((a, b) => new Date(a.bookingTime).getTime() - new Date(b.bookingTime).getTime());
+  };
+
+  const todayBookings = getTodayBookings();
+
+  // Filtered bookings list (status + search name/phone + date from/to)
+  const filteredBookings = bookings
+    .filter(b => bookingFilter === 'all' || b.status === bookingFilter)
+    .filter(b => {
+      if (!bookingSearch) return true;
+      const q = bookingSearch.toLowerCase();
+      const nameMatch = b.customerName.toLowerCase().includes(q);
+      const phoneMatch = b.customerPhone.includes(q);
+      return nameMatch || phoneMatch;
+    })
+    .filter(b => {
+      if (!bookingDateFrom && !bookingDateTo) return true;
+      const dateStr = b.bookingTime.slice(0, 10); // YYYY-MM-DD
+      if (bookingDateFrom && dateStr < bookingDateFrom) return false;
+      if (bookingDateTo && dateStr > bookingDateTo) return false;
+      return true;
+    });
 
   if (authLoading) {
     return (
@@ -1061,6 +1094,169 @@ export default function MerchantDashboard() {
         {activeView === 'bookings' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             
+            {/* TODAY'S AGENDA VIEW */}
+            <div className="glass-card" style={{ background: 'var(--card)', border: '1px solid var(--border)', padding: '1.25rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none' }} onClick={() => setAgendaCollapsed(!agendaCollapsed)}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                  <Calendar size={18} style={{ color: '#6366f1' }} />
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0 }}>Today's Schedule</h3>
+                  <span className="badge badge-primary" style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', borderRadius: '6px', background: 'var(--primary)', color: 'white', fontWeight: 700 }}>
+                    {todayBookings.length} {todayBookings.length === 1 ? 'booking' : 'bookings'}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--muted)', fontWeight: 550 }}>
+                    {new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}
+                  </span>
+                  <button style={{ background: 'none', border: 'none', color: 'var(--muted)', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}>
+                    {agendaCollapsed ? 'Show' : 'Hide'}
+                  </button>
+                </div>
+              </div>
+
+              <AnimatePresence>
+                {!agendaCollapsed && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1, marginTop: '1rem' }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    style={{ overflow: 'hidden' }}
+                  >
+                    {todayBookings.length === 0 ? (
+                      <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--muted)', border: '1px dashed var(--border)', borderRadius: '8px', background: 'rgba(255,255,255,0.01)' }}>
+                        <Clock size={24} style={{ margin: '0 auto 0.5rem auto', opacity: 0.6 }} />
+                        <p style={{ fontSize: '0.85rem', margin: 0, fontWeight: 500 }}>No appointments scheduled for today.</p>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.75rem' }}>
+                        {todayBookings.map((bk) => {
+                          const svc = services.find(s => s.id === bk.serviceId);
+                          const staff = staffList.find(st => st.id === bk.staffId);
+                          const bTime = new Date(bk.bookingTime);
+                          const formattedTime = bTime.toLocaleTimeString('en-IN', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                          });
+                          
+                          const duration = svc?.duration || 30;
+                          const endTime = new Date(bTime.getTime() + duration * 60000);
+                          const formattedEndTime = endTime.toLocaleTimeString('en-IN', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                          });
+
+                          return (
+                            <div 
+                              key={bk.id} 
+                              style={{ 
+                                border: '1px solid var(--border)', 
+                                borderRadius: '8px', 
+                                padding: '0.85rem', 
+                                background: 'var(--muted-light)',
+                                display: 'flex', 
+                                flexDirection: 'column', 
+                                justifyContent: 'space-between',
+                                gap: '0.5rem',
+                                transition: 'all 0.2s ease'
+                              }}
+                              className="table-row-hover"
+                            >
+                              <div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#10b981', fontWeight: 700, fontSize: '0.8rem' }}>
+                                    <Clock size={12} />
+                                    <span>{formattedTime} - {formattedEndTime}</span>
+                                  </div>
+                                  <span className={`badge ${
+                                    bk.status === 'confirmed' ? 'badge-success' : 
+                                    (bk.status === 'pending' ? 'badge-warning' : 
+                                    (bk.status === 'completed' ? 'badge-primary' : 'badge-danger'))
+                                  }`} style={{ fontSize: '0.65rem', padding: '1px 5px', textTransform: 'uppercase' }}>
+                                    {bk.status.replace('_', '-')}
+                                  </span>
+                                </div>
+
+                                <h4 style={{ fontSize: '0.95rem', fontWeight: 700, marginTop: '0.5rem', marginBottom: '0.1rem' }}>
+                                  {bk.customerName}
+                                </h4>
+                                <div style={{ fontSize: '0.75rem', opacity: 0.6, marginBottom: '0.4rem' }}>{bk.customerPhone}</div>
+
+                                <div style={{ borderTop: '1px solid var(--border)', paddingTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                                  <div style={{ fontSize: '0.82rem', fontWeight: 600 }}>{svc?.name || 'Deleted Service'}</div>
+                                  {staff && <div style={{ fontSize: '0.72rem', color: '#a855f7', fontWeight: 500 }}>Staff: {staff.name}</div>}
+                                </div>
+                              </div>
+
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.25rem', borderTop: '1px solid var(--border)', paddingTop: '0.5rem' }}>
+                                <span style={{ fontSize: '0.9rem', fontWeight: 800 }}>₹{bk.price}</span>
+                                
+                                {/* Quick Action Buttons */}
+                                <div style={{ display: 'flex', gap: '0.25rem' }}>
+                                  {bk.status === 'pending' && (
+                                    <>
+                                      <button 
+                                        onClick={(e) => { e.stopPropagation(); handleUpdateBookingStatus(bk, 'confirmed'); }} 
+                                        className="btn btn-secondary" 
+                                        style={{ padding: '0.2rem 0.4rem', fontSize: '0.65rem', height: '24px', border: 'none', background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', fontWeight: 700 }}
+                                        title="Accept Booking"
+                                      >
+                                        <Check size={10} /> Confirm
+                                      </button>
+                                      <button 
+                                        onClick={(e) => { e.stopPropagation(); handleUpdateBookingStatus(bk, 'cancelled'); }} 
+                                        className="btn btn-secondary" 
+                                        style={{ padding: '0.2rem 0.4rem', fontSize: '0.65rem', height: '24px', border: 'none', color: '#ef4444', fontWeight: 700 }}
+                                        title="Cancel Booking"
+                                      >
+                                        <X size={10} /> Cancel
+                                      </button>
+                                    </>
+                                  )}
+                                  {bk.status === 'confirmed' && (
+                                    <>
+                                      <button 
+                                        onClick={(e) => { e.stopPropagation(); handleUpdateBookingStatus(bk, 'completed'); }} 
+                                        className="btn btn-secondary" 
+                                        style={{ padding: '0.2rem 0.4rem', fontSize: '0.65rem', height: '24px', border: 'none', background: 'rgba(99, 102, 241, 0.1)', color: '#6366f1', fontWeight: 700 }}
+                                      >
+                                        ✓ Done
+                                      </button>
+                                      {business.plan !== 'free' && (
+                                        <button 
+                                          onClick={(e) => { e.stopPropagation(); handleSimulateReminder(bk); }} 
+                                          className="btn btn-secondary" 
+                                          style={{ padding: '0.2rem 0.4rem', fontSize: '0.65rem', height: '24px', border: 'none', background: '#25d366', color: 'white', fontWeight: 700 }}
+                                          title="Send Reminder"
+                                        >
+                                          🔔 Remind
+                                        </button>
+                                      )}
+                                    </>
+                                  )}
+                                  {bk.status === 'completed' && business.plan !== 'free' && (
+                                    <button 
+                                      onClick={(e) => { e.stopPropagation(); handleSimulateReviewRequest(bk); }} 
+                                      className="btn btn-secondary" 
+                                      style={{ padding: '0.2rem 0.4rem', fontSize: '0.65rem', height: '24px', border: 'none', background: 'rgba(234, 179, 8, 0.1)', color: '#eab308', fontWeight: 700 }}
+                                    >
+                                      ⭐ Ask Review
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+            
             {/* Filter controls and Actions */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
               
@@ -1101,12 +1297,71 @@ export default function MerchantDashboard() {
               </div>
             </div>
 
+            {/* Search & Date Filters Control Bar */}
+            <div className="glass-card" style={{ background: 'var(--card)', border: '1px solid var(--border)', padding: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', flex: 1, alignItems: 'center' }}>
+                {/* Search Customer Input */}
+                <div style={{ position: 'relative', flex: '1 1 280px', maxWidth: '400px' }}>
+                  <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />
+                  <input 
+                    type="text" 
+                    placeholder="Search customer name or phone..." 
+                    value={bookingSearch}
+                    onChange={(e) => setBookingSearch(e.target.value)}
+                    className="form-input"
+                    style={{ paddingLeft: '2.5rem', width: '100%', height: '38px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--foreground)', fontSize: '0.85rem' }}
+                  />
+                </div>
+
+                {/* Date Filters */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--muted)', fontWeight: 550 }}>Date Range:</span>
+                  <input 
+                    type="date" 
+                    value={bookingDateFrom}
+                    onChange={(e) => setBookingDateFrom(e.target.value)}
+                    className="form-input"
+                    style={{ padding: '0.4rem 0.6rem', fontSize: '0.8rem', width: 'auto', height: '38px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--foreground)' }}
+                  />
+                  <span style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>to</span>
+                  <input 
+                    type="date" 
+                    value={bookingDateTo}
+                    onChange={(e) => setBookingDateTo(e.target.value)}
+                    className="form-input"
+                    style={{ padding: '0.4rem 0.6rem', fontSize: '0.8rem', width: 'auto', height: '38px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--foreground)' }}
+                  />
+                </div>
+              </div>
+
+              {/* Clear Filters Button */}
+              {(bookingSearch || bookingDateFrom || bookingDateTo) && (
+                <button 
+                  onClick={() => {
+                    setBookingSearch('');
+                    setBookingDateFrom('');
+                    setBookingDateTo('');
+                  }}
+                  className="btn btn-secondary btn-sm"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.8rem', padding: '0.4rem 0.8rem', height: '38px', borderRadius: '8px', border: '1px solid var(--border)' }}
+                >
+                  <X size={14} />
+                  <span>Clear Filters</span>
+                </button>
+              )}
+            </div>
+
             {/* Bookings Data Table */}
             <div className="glass-card" style={{ padding: 0, overflowX: 'auto' }}>
               {filteredBookings.length === 0 ? (
                 <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--muted)' }}>
                   <Calendar size={32} style={{ margin: '0 auto 0.75rem auto' }} />
-                  <p>No booking requests match your active filter.</p>
+                  <p>
+                    {bookingSearch || bookingDateFrom || bookingDateTo 
+                      ? "No bookings found matching your search or date criteria." 
+                      : "No booking requests match your active filter."
+                    }
+                  </p>
                 </div>
               ) : (
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
