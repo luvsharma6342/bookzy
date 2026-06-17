@@ -45,6 +45,51 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    // Overlap/Double-Booking Prevention
+    const resolvedStaffId = staffId && !staffId.startsWith("st-") ? staffId : null;
+    if (resolvedStaffId) {
+      const requestedService = await prisma.service.findUnique({
+        where: { id: serviceId }
+      });
+
+      if (!requestedService) {
+        return NextResponse.json({ error: "Service not found" }, { status: 404 });
+      }
+
+      const newStart = new Date(bookingTime);
+      const newEnd = new Date(newStart.getTime() + requestedService.duration * 60 * 1000);
+
+      // Query bookings for same staff around same day (+-12h range for efficiency)
+      const checkStart = new Date(newStart.getTime() - 12 * 60 * 60 * 1000);
+      const checkEnd = new Date(newStart.getTime() + 12 * 60 * 60 * 1000);
+
+      const existingBookings = await prisma.booking.findMany({
+        where: {
+          staffId: resolvedStaffId,
+          status: { in: ["confirmed", "pending"] },
+          bookingTime: {
+            gte: checkStart,
+            lte: checkEnd
+          }
+        },
+        include: {
+          service: true
+        }
+      });
+
+      for (const existing of existingBookings) {
+        const existingStart = new Date(existing.bookingTime);
+        const existingEnd = new Date(existingStart.getTime() + existing.service.duration * 60 * 1000);
+
+        if (existingStart < newEnd && existingEnd > newStart) {
+          return NextResponse.json(
+            { error: "This time slot is already booked. Please choose a different time." },
+            { status: 409 }
+          );
+        }
+      }
+    }
+
     const booking = await prisma.booking.create({
       data: {
         businessId,

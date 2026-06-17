@@ -195,9 +195,16 @@ export default function ChatbotSimulator({
       setIsTyping(false);
 
       if (!res.ok) {
-        addMessage('bot', isHindi
+        let errMsg = isHindi
           ? '❌ माफ़ करें, बुकिंग बनाने में त्रुटि हुई। कृपया दोबारा कोशिश करें।'
-          : '❌ Sorry, there was an error creating your booking. Please try again.');
+          : '❌ Sorry, there was an error creating your booking. Please try again.';
+        try {
+          const err = await res.json();
+          if (err.error) {
+            errMsg = `❌ ${err.error}`;
+          }
+        } catch {}
+        addMessage('bot', errMsg);
         setCurrentStep('service');
         return;
       }
