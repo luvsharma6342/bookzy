@@ -374,7 +374,7 @@ export default function ChatbotSimulator({
               <button 
                 key={service.id}
                 onClick={() => handleServiceSelect(service)}
-                style={{ width: '100%', background: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.6rem 0.8rem', textAlign: 'left', cursor: 'pointer', fontSize: '0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'background 0.2s' }}
+                style={{ width: '100%', background: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.6rem 0.8rem', textAlign: 'left', cursor: 'pointer', fontSize: '0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'background 0.2s', color: '#1e293b' }}
                 className="chatbot-btn-option"
               >
                 <strong>{service.name}</strong>
@@ -430,7 +430,7 @@ export default function ChatbotSimulator({
               placeholder={isHindi ? "अपना नाम यहाँ टाइप करें..." : "Type your full name..."}
               value={textInput}
               onChange={(e) => setTextInput(e.target.value)}
-              style={{ flex: 1, padding: '0.6rem 0.8rem', borderRadius: '20px', border: '1px solid #d4d0cc', background: 'white', fontSize: '0.9rem', outline: 'none' }}
+              style={{ flex: 1, padding: '0.6rem 0.8rem', borderRadius: '20px', border: '1px solid #d4d0cc', background: 'white', fontSize: '0.9rem', outline: 'none', color: '#1e293b' }}
               autoFocus
             />
             <button 
@@ -447,7 +447,7 @@ export default function ChatbotSimulator({
               placeholder={isHindi ? "WhatsApp नंबर (जैसे 9876543210)" : "WhatsApp number (e.g. 9876543210)"}
               value={textInput}
               onChange={(e) => setTextInput(e.target.value)}
-              style={{ flex: 1, padding: '0.6rem 0.8rem', borderRadius: '20px', border: '1px solid #25d366', background: 'white', fontSize: '0.9rem', outline: 'none' }}
+              style={{ flex: 1, padding: '0.6rem 0.8rem', borderRadius: '20px', border: '1px solid #25d366', background: 'white', fontSize: '0.9rem', outline: 'none', color: '#1e293b' }}
               autoFocus
               inputMode="tel"
             />
@@ -466,7 +466,7 @@ export default function ChatbotSimulator({
                 type="text" 
                 placeholder={isHindi ? "ऊपर दिए गए विकल्पों में से चुनें..." : "Select from options above..."}
                 disabled 
-                style={{ flex: 1, padding: '0.6rem 0.8rem', borderRadius: '20px', border: '1px solid #d4d0cc', background: '#e4e0dc', fontSize: '0.9rem', outline: 'none', cursor: 'not-allowed' }}
+                style={{ flex: 1, padding: '0.6rem 0.8rem', borderRadius: '20px', border: '1px solid #d4d0cc', background: '#e4e0dc', fontSize: '0.9rem', outline: 'none', cursor: 'not-allowed', color: '#64748b' }}
               />
               <button disabled style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', background: '#cbd5e1', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'not-allowed' }}>
                 <Send size={16} />
