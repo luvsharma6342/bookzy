@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import Link from "next/link";
-import { Phone, ArrowRight, Loader2, CheckCircle2, Store, Tag } from "lucide-react";
+import { Phone, ArrowRight, Loader2, CheckCircle2, Store, Tag, Sun, Moon } from "lucide-react";
 
 export default function OnboardPage() {
   const router = useRouter();
@@ -16,6 +16,29 @@ export default function OnboardPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true); // checking whether they already have a business
+
+  // Theme state
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  // Load and apply initial theme
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+      const isDark = savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      setTheme(isDark ? 'dark' : 'light');
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(nextTheme);
+    localStorage.setItem('theme', nextTheme);
+    if (nextTheme === 'dark') {
+      document.body.classList.add('dark-theme');
+    } else {
+      document.body.classList.remove('dark-theme');
+    }
+  };
 
   // Once session is ready, check if user already has a business
   useEffect(() => {
@@ -135,22 +158,33 @@ export default function OnboardPage() {
   // While checking session or business existence
   if (isPending || checking) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f8fafc]">
+      <div className="min-h-screen flex items-center justify-center bg-[var(--background)] text-[var(--foreground)]">
         <div className="flex flex-col items-center gap-3">
           <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-extrabold text-xl shadow-md animate-pulse">
             B
           </div>
-          <p className="text-sm text-slate-500 font-medium">Setting up your account…</p>
+          <p className="text-sm text-[var(--muted)] font-medium">Setting up your account…</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center px-4 relative bg-[#f8fafc] text-[#0f172a] overflow-hidden">
+    <div className="min-h-screen flex flex-col justify-center items-center px-4 relative bg-[var(--background)] text-[var(--foreground)] overflow-hidden transition-colors duration-300">
+      {/* Theme Toggle */}
+      <div className="absolute top-4 right-4 z-20">
+        <button
+          onClick={toggleTheme}
+          className="p-2.5 rounded-xl border border-[var(--border)] bg-[var(--card)]/80 text-[var(--foreground)] hover:bg-[var(--muted-light)] transition flex items-center justify-center shadow-sm"
+          aria-label="Toggle Theme"
+        >
+          {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
+        </button>
+      </div>
+
       {/* Background blobs */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-200/20 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-200/20 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-200/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-200/10 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="w-full max-w-md z-10">
         {/* Header */}
@@ -163,21 +197,21 @@ export default function OnboardPage() {
           </Link>
 
           {/* Welcome badge */}
-          <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-3">
+          <div className="inline-flex items-center gap-2 badge badge-success mb-3 px-3 py-1.5 rounded-full text-xs">
             <CheckCircle2 size={14} />
             Google account connected
           </div>
 
           <h2 className="text-2xl font-bold font-title mt-1">Setup your storefront</h2>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-sm text-[var(--muted)] mt-1">
             Customize your business details below to finish setting up your Bookze page.
           </p>
         </div>
 
         {/* Card */}
-        <div className="bg-white/80 backdrop-blur-md rounded-2xl p-8 shadow-xl border border-slate-200/50">
+        <div className="bg-[var(--card)]/80 backdrop-blur-md rounded-2xl p-8 shadow-xl border border-[var(--border)]">
           {error && (
-            <div className="mb-5 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
+            <div className="mb-5 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm">
               {error}
             </div>
           )}
@@ -185,11 +219,11 @@ export default function OnboardPage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Business Name Input */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-600">
+              <label className="text-xs font-semibold text-[var(--muted)]">
                 Business Name
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)] opacity-70">
                   <Store size={18} />
                 </span>
                 <input
@@ -198,7 +232,7 @@ export default function OnboardPage() {
                   placeholder="e.g. Priya's Premium Salon"
                   value={businessName}
                   onChange={(e) => setBusinessName(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 text-sm bg-white"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--border)] focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 text-sm bg-[var(--card)] text-[var(--foreground)]"
                   autoFocus
                 />
               </div>
@@ -206,17 +240,17 @@ export default function OnboardPage() {
 
             {/* Category Selector */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-600">
+              <label className="text-xs font-semibold text-[var(--muted)]">
                 Business Category
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)] opacity-70">
                   <Tag size={18} />
                 </span>
                 <select
                   value={bizCategory}
                   onChange={(e) => setBizCategory(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 text-sm bg-white appearance-none"
+                  className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-[var(--border)] focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 text-sm bg-[var(--card)] text-[var(--foreground)] appearance-none"
                 >
                   <option value="Salons & Beauty Parlours">Salons & Beauty Parlours</option>
                   <option value="Gyms & Yoga Studios">Gyms & Yoga Studios</option>
@@ -224,7 +258,7 @@ export default function OnboardPage() {
                   <option value="Clinics & Doctors">Clinics & Doctors</option>
                   <option value="Local Services (Plumbers/Carpenters)">Local Services (Plumbers/Carpenters)</option>
                 </select>
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--muted)] text-[8px]">
                   ▼
                 </div>
               </div>
@@ -232,11 +266,11 @@ export default function OnboardPage() {
 
             {/* WhatsApp Phone Number */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-600">
+              <label className="text-xs font-semibold text-[var(--muted)]">
                 WhatsApp Business Number
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)] opacity-70">
                   <Phone size={18} />
                 </span>
                 <input
@@ -245,10 +279,10 @@ export default function OnboardPage() {
                   placeholder="e.g. +91 98765 43210"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 text-sm bg-white"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--border)] focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 text-sm bg-[var(--card)] text-[var(--foreground)]"
                 />
               </div>
-              <p className="text-[11px] text-slate-400 mt-1">
+              <p className="text-[11px] text-[var(--muted)] opacity-85 mt-1">
                 Customers will send booking requests to this number via WhatsApp.
               </p>
             </div>
@@ -272,7 +306,7 @@ export default function OnboardPage() {
             </button>
           </form>
 
-          <p className="text-center text-xs text-slate-400 mt-4">
+          <p className="text-center text-xs text-[var(--muted)] mt-4">
             You can update these details anytime from your dashboard settings.
           </p>
         </div>

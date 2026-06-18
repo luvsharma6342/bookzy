@@ -44,7 +44,9 @@ import {
   QrCode,
   Share2,
   Pencil,
-  Search
+  Search,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -202,18 +204,32 @@ export default function MerchantDashboard() {
     }
   }, [selectedBizId, authLoading]);
 
-  // Apply dark theme class to dashboard outer container on mount
+  // Manage theme state
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+
   useEffect(() => {
-    const element = document.getElementById('dashboard-wrapper');
-    if (element) {
-      element.classList.add('dark-theme');
-    }
-    return () => {
-      if (element) {
-        element.classList.remove('dark-theme');
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+      const activeTheme = savedTheme || 'dark'; // Dashboard defaults to dark mode
+      setTheme(activeTheme);
+      if (activeTheme === 'dark') {
+        document.body.classList.add('dark-theme');
+      } else {
+        document.body.classList.remove('dark-theme');
       }
-    };
+    }
   }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(nextTheme);
+    localStorage.setItem('theme', nextTheme);
+    if (nextTheme === 'dark') {
+      document.body.classList.add('dark-theme');
+    } else {
+      document.body.classList.remove('dark-theme');
+    }
+  };
 
   // Real Razorpay payment checkout
   const handleUpgrade = async (plan: 'growth' | 'pro') => {
@@ -1049,6 +1065,16 @@ export default function MerchantDashboard() {
             </button>
           )}
           
+          {/* Theme Toggle */}
+          <button
+            onClick={toggleTheme}
+            className="btn btn-outline btn-sm"
+            style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '0.35rem', fontSize: '0.72rem' }}
+          >
+            {theme === 'light' ? <Moon size={12} /> : <Sun size={12} />}
+            <span>{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
+          </button>
+
           <Link href="/" className="btn btn-secondary btn-sm" style={{ width: '100%' }}>
             ← Platform Home
           </Link>

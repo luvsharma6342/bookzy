@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Business, Service, Staff, Booking } from '@/lib/db';
@@ -13,6 +13,8 @@ import {
   Sparkles,
   Check,
   Home,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import ChatbotSimulator from '@/components/ChatbotSimulator';
 import confetti from 'canvas-confetti';
@@ -33,6 +35,34 @@ export default function StorefrontClient({
   const [services] = useState<Service[]>(initialServices);
   const [staffList] = useState<Staff[]>(initialStaff);
   const [bookings, setBookings] = useState<Booking[]>(initialBookings);
+
+  // Theme state
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  // Load and apply initial theme
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+      const isDark = savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      setTheme(isDark ? 'dark' : 'light');
+      if (isDark) {
+        document.body.classList.add('dark-theme');
+      } else {
+        document.body.classList.remove('dark-theme');
+      }
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(nextTheme);
+    localStorage.setItem('theme', nextTheme);
+    if (nextTheme === 'dark') {
+      document.body.classList.add('dark-theme');
+    } else {
+      document.body.classList.remove('dark-theme');
+    }
+  };
 
   // Page Language state
   const [isHindi, setIsHindi] = useState(false);
@@ -202,18 +232,27 @@ export default function StorefrontClient({
   };
 
   return (
-    <div style={{ background: '#f8fafc', minHeight: '100vh', color: '#0f172a' }}>
+    <div style={{ background: 'var(--background)', minHeight: '100vh', color: 'var(--foreground)' }}>
 
       {/* Cover Banner */}
       <div style={{ height: '180px', background: 'linear-gradient(135deg, #6366f1 0%, #d8b4fe 100%)', position: 'relative' }}>
-        {/* Language Toggle */}
-        <div style={{ position: 'absolute', top: '1rem', right: '1rem', zIndex: 10 }}>
+        {/* Language & Theme Controls */}
+        <div style={{ position: 'absolute', top: '1rem', right: '1rem', zIndex: 10, display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
           <button
             onClick={() => setIsHindi(!isHindi)}
-            style={{ background: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', boxShadow: 'var(--shadow-md)' }}
+            style={{ background: 'var(--card)', color: 'var(--foreground)', border: '1px solid var(--border)', padding: '0.4rem 0.8rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', boxShadow: 'var(--shadow-md)' }}
           >
             <Languages size={14} />
             {isHindi ? 'English' : 'हिंदी'}
+          </button>
+
+          <button
+            type="button"
+            onClick={toggleTheme}
+            style={{ background: 'var(--card)', color: 'var(--foreground)', border: '1px solid var(--border)', padding: '0.4rem', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--shadow-md)', width: '32px', height: '32px' }}
+            title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+          >
+            {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
           </button>
         </div>
         {/* Back Link */}
@@ -226,7 +265,7 @@ export default function StorefrontClient({
 
       {/* Business Profile Header Card */}
       <div className="container" style={{ marginTop: '-4rem', position: 'relative', zIndex: 5, maxWidth: '800px', marginBottom: '2rem' }}>
-        <div className="glass-card" style={{ background: 'white', display: 'flex', flexDirection: 'column', gap: '1.25rem', boxShadow: 'var(--shadow-lg)' }}>
+        <div className="glass-card" style={{ background: 'var(--card)', display: 'flex', flexDirection: 'column', gap: '1.25rem', boxShadow: 'var(--shadow-lg)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
               <div style={{ width: '5rem', height: '5rem', borderRadius: '12px', background: 'linear-gradient(135deg, #a855f7, #6366f1)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '2rem', boxShadow: 'var(--shadow-md)' }}>
@@ -234,8 +273,8 @@ export default function StorefrontClient({
               </div>
               <div>
                 <h1 style={{ fontSize: '1.75rem', fontWeight: 800, fontFamily: 'var(--font-title)' }}>{business.name}</h1>
-                <p style={{ color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.9rem', marginTop: '0.25rem' }}>
-                  <span style={{ display: 'inline-flex', padding: '0.1rem 0.4rem', background: '#f1f5f9', borderRadius: '4px', fontWeight: 600, color: '#475569' }}>
+                <p style={{ color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.9rem', marginTop: '0.25rem' }}>
+                  <span style={{ display: 'inline-flex', padding: '0.1rem 0.4rem', background: 'var(--muted-light)', borderRadius: '4px', fontWeight: 600, color: 'var(--muted)' }}>
                     {business.category}
                   </span>
                 </p>
@@ -244,8 +283,8 @@ export default function StorefrontClient({
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#eab308' }}>
                 <Star fill="#eab308" size={18} />
-                <strong style={{ fontSize: '1.1rem', color: '#0f172a' }}>{business.rating}</strong>
-                <span style={{ color: '#64748b', fontSize: '0.85rem' }}>({business.reviewsCount} reviews)</span>
+                <strong style={{ fontSize: '1.1rem', color: 'var(--foreground)' }}>{business.rating}</strong>
+                <span style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>({business.reviewsCount} reviews)</span>
               </div>
               <span className="badge badge-success" style={{ marginTop: '0.5rem' }}>
                 {isHindi ? 'खुला है (Open)' : 'Open Now'}
@@ -253,9 +292,9 @@ export default function StorefrontClient({
             </div>
           </div>
 
-          <p style={{ color: '#64748b', lineHeight: 1.5, fontSize: '0.95rem' }}>{business.description}</p>
+          <p style={{ color: 'var(--muted)', lineHeight: 1.5, fontSize: '0.95rem' }}>{business.description}</p>
 
-          <div className="storefront-info-grid" style={{ borderTop: '1px solid #f1f5f9', paddingTop: '1rem', fontSize: '0.85rem', color: '#64748b' }}>
+          <div className="storefront-info-grid" style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem', fontSize: '0.85rem', color: 'var(--muted)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <MapPin size={16} style={{ color: '#6366f1' }} />
               <span>{business.city}</span>
@@ -273,7 +312,7 @@ export default function StorefrontClient({
 
         {/* Left Column: Services */}
         <section style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }} className="storefront-column">
-          <h3 style={{ fontSize: '1.25rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem' }}>
+          <h3 style={{ fontSize: '1.25rem', borderBottom: '2px solid var(--border)', paddingBottom: '0.5rem' }}>
             {isHindi ? 'सेवाएं कैटलॉग' : 'Services Catalogue'}
           </h3>
 
@@ -284,9 +323,9 @@ export default function StorefrontClient({
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
                 style={{
-                  background: activeCategory === cat ? '#6366f1' : 'white',
-                  color: activeCategory === cat ? 'white' : '#64748b',
-                  border: '1px solid #e2e8f0',
+                  background: activeCategory === cat ? '#6366f1' : 'var(--card)',
+                  color: activeCategory === cat ? 'white' : 'var(--muted)',
+                  border: '1px solid var(--border)',
                   padding: '0.4rem 0.9rem',
                   borderRadius: '20px',
                   fontSize: '0.8rem',
@@ -306,19 +345,19 @@ export default function StorefrontClient({
               <div
                 key={service.id}
                 className="glass-card"
-                style={{ background: 'white', border: selectedService?.id === service.id ? '2px solid #6366f1' : '1px solid #e2e8f0', cursor: 'pointer' }}
+                style={{ background: 'var(--card)', border: selectedService?.id === service.id ? '2px solid #6366f1' : '1px solid var(--border)', cursor: 'pointer' }}
                 onClick={() => setSelectedService(service)}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start' }}>
                   <div style={{ flex: 1 }}>
                     <h4 style={{ fontSize: '1.05rem', fontWeight: 650 }}>{service.name}</h4>
-                    <p style={{ color: '#64748b', fontSize: '0.8rem', margin: '0.25rem 0' }}>{service.description}</p>
+                    <p style={{ color: 'var(--muted)', fontSize: '0.8rem', margin: '0.25rem 0' }}>{service.description}</p>
                     <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem', fontSize: '0.8rem', fontWeight: 600 }}>
                       <span style={{ color: '#6366f1' }}>{service.duration} mins</span>
                       <span style={{ color: '#10b981' }}>₹{service.price}</span>
                     </div>
                   </div>
-                  <div style={{ height: '1.5rem', width: '1.5rem', borderRadius: '50%', border: '2px solid #cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', borderColor: selectedService?.id === service.id ? '#6366f1' : '#cbd5e1', background: selectedService?.id === service.id ? '#6366f1' : 'transparent', color: 'white' }}>
+                  <div style={{ height: '1.5rem', width: '1.5rem', borderRadius: '50%', border: '2px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderColor: selectedService?.id === service.id ? '#6366f1' : 'var(--border)', background: selectedService?.id === service.id ? '#6366f1' : 'transparent', color: 'white' }}>
                     {selectedService?.id === service.id && <Check size={12} />}
                   </div>
                 </div>
@@ -329,13 +368,13 @@ export default function StorefrontClient({
 
         {/* Right Column: Booking Wizard */}
         <section style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }} className="storefront-column">
-          <h3 style={{ fontSize: '1.25rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem' }}>
+          <h3 style={{ fontSize: '1.25rem', borderBottom: '2px solid var(--border)', paddingBottom: '0.5rem' }}>
             {isHindi ? 'अप्वाइंटमेंट बुक करें' : 'Booking Panel'}
           </h3>
 
-          <div className="glass-card" style={{ background: 'white', position: 'sticky', top: '6rem' }}>
+          <div className="glass-card" style={{ background: 'var(--card)', position: 'sticky', top: '6rem' }}>
             {!selectedService ? (
-              <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#64748b' }}>
+              <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--muted)' }}>
                 <Sparkles size={32} style={{ color: '#a855f7', margin: '0 auto 0.75rem auto' }} />
                 <p style={{ fontSize: '0.95rem' }}>
                   {isHindi ? 'बुकिंग शुरू करने के लिए पहले बायीं ओर से एक सेवा चुनें।' : 'Select a service from the catalogue to start your booking.'}
@@ -345,10 +384,10 @@ export default function StorefrontClient({
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
                 {/* Selected Service */}
-                <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                  <span style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 700 }}>{isHindi ? 'चुनी हुई सेवा' : 'Selected Service'}</span>
+                <div style={{ background: 'var(--background)', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--muted)', textTransform: 'uppercase', fontWeight: 700 }}>{isHindi ? 'चुनी हुई सेवा' : 'Selected Service'}</span>
                   <h4 style={{ fontSize: '1rem', fontWeight: 650, marginTop: '0.15rem' }}>{selectedService.name}</h4>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginTop: '0.25rem', color: '#64748b' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginTop: '0.25rem', color: 'var(--muted)' }}>
                     <span>{selectedService.duration} mins</span>
                     <strong>₹{selectedService.price}</strong>
                   </div>
@@ -359,11 +398,11 @@ export default function StorefrontClient({
                   <div>
                     <label className="form-label">{isHindi ? 'स्टाफ सदस्य चुनें (वैकल्पिक)' : 'Select Staff Member (Optional)'}</label>
                     <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.35rem' }}>
-                      <button onClick={() => setSelectedStaff(null)} style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.8rem', background: selectedStaff === null ? '#6366f1' : 'white', color: selectedStaff === null ? 'white' : '#0f172a', cursor: 'pointer' }}>
+                      <button onClick={() => setSelectedStaff(null)} style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '0.8rem', background: selectedStaff === null ? '#6366f1' : 'var(--card)', color: selectedStaff === null ? 'white' : 'var(--foreground)', cursor: 'pointer' }}>
                         {isHindi ? 'कोई भी' : 'Any Staff'}
                       </button>
                       {staffList.map((st) => (
-                        <button key={st.id} onClick={() => setSelectedStaff(st)} style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.8rem', background: selectedStaff?.id === st.id ? '#6366f1' : 'white', color: selectedStaff?.id === st.id ? 'white' : '#0f172a', cursor: 'pointer' }}>
+                        <button key={st.id} onClick={() => setSelectedStaff(st)} style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '0.8rem', background: selectedStaff?.id === st.id ? '#6366f1' : 'var(--card)', color: selectedStaff?.id === st.id ? 'white' : 'var(--foreground)', cursor: 'pointer' }}>
                           {st.name}
                         </button>
                       ))}
@@ -379,7 +418,7 @@ export default function StorefrontClient({
                       const isSelected = selectedDate?.getDate() === date.getDate() && selectedDate?.getMonth() === date.getMonth();
                       return (
                         <button key={idx} onClick={() => { setSelectedDate(date); setSelectedTimeSlot(''); }}
-                          style={{ minWidth: '55px', padding: '0.5rem 0.25rem', borderRadius: '8px', border: '1px solid #e2e8f0', textAlign: 'center', cursor: 'pointer', background: isSelected ? '#6366f1' : 'white', color: isSelected ? 'white' : '#0f172a', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                          style={{ minWidth: '55px', padding: '0.5rem 0.25rem', borderRadius: '8px', border: '1px solid var(--border)', textAlign: 'center', cursor: 'pointer', background: isSelected ? '#6366f1' : 'var(--card)', color: isSelected ? 'white' : 'var(--foreground)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
                           <span style={{ fontSize: '0.7rem', fontWeight: 600, opacity: isSelected ? 0.85 : 0.6 }}>{date.toLocaleDateString(isHindi ? 'hi-IN' : 'en-US', { weekday: 'short' })}</span>
                           <span style={{ fontSize: '1.1rem', fontWeight: 800 }}>{date.getDate()}</span>
                         </button>
@@ -398,7 +437,7 @@ export default function StorefrontClient({
                         const isSelected = selectedTimeSlot === slot;
                         return (
                           <button key={idx} disabled={isBooked} onClick={() => setSelectedTimeSlot(slot)}
-                            style={{ padding: '0.5rem 0.25rem', fontSize: '0.75rem', fontWeight: 600, borderRadius: '6px', border: '1px solid #e2e8f0', cursor: isBooked ? 'not-allowed' : 'pointer', background: isSelected ? '#6366f1' : isBooked ? '#fee2e2' : 'white', color: isSelected ? 'white' : isBooked ? '#ef4444' : '#0f172a', borderColor: isSelected ? '#6366f1' : isBooked ? '#fca5a5' : '#e2e8f0', textDecoration: isBooked ? 'line-through' : 'none' }}>
+                            style={{ padding: '0.5rem 0.25rem', fontSize: '0.75rem', fontWeight: 600, borderRadius: '6px', border: '1px solid var(--border)', cursor: isBooked ? 'not-allowed' : 'pointer', background: isSelected ? '#6366f1' : isBooked ? 'rgba(239, 68, 68, 0.15)' : 'var(--card)', color: isSelected ? 'white' : isBooked ? '#ef4444' : 'var(--foreground)', borderColor: isSelected ? '#6366f1' : isBooked ? '#fca5a5' : 'var(--border)', textDecoration: isBooked ? 'line-through' : 'none' }}>
                             {slot}
                           </button>
                         );
@@ -409,7 +448,7 @@ export default function StorefrontClient({
 
                 {/* Customer Details Form */}
                 {selectedTimeSlot && (
-                  <form onSubmit={handleWhatsAppBooking} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', borderTop: '1px solid #f1f5f9', paddingTop: '1rem' }}>
+                  <form onSubmit={handleWhatsAppBooking} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
                     <div className="form-group" style={{ marginBottom: 0 }}>
                       <label className="form-label">{isHindi ? 'आपका नाम' : 'Your Name'}</label>
                       <input type="text" className="form-input" required value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="e.g. Ramesh Kumar" />
@@ -453,13 +492,13 @@ export default function StorefrontClient({
       <AnimatePresence>
         {showWAConfirmation && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="glass-card" style={{ background: 'white', maxWidth: '480px', width: '100%', padding: '2rem', boxShadow: 'var(--shadow-premium)', borderRadius: '16px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="glass-card" style={{ background: 'var(--card)', border: '1px solid var(--border)', maxWidth: '480px', width: '100%', padding: '2rem', boxShadow: 'var(--shadow-premium)', borderRadius: '16px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               <div style={{ width: '4rem', height: '4rem', borderRadius: '50%', background: 'rgba(37,211,102,0.1)', color: '#25d366', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
                 <MessageSquare size={32} />
               </div>
               <div>
                 <h3 style={{ fontSize: '1.5rem', fontWeight: 800 }}>{isHindi ? 'व्हाट्सएप बुकिंग की पुष्टि करें' : 'Confirm WhatsApp Booking'}</h3>
-                <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.5rem', lineHeight: 1.5 }}>
+                <p style={{ color: 'var(--muted)', fontSize: '0.9rem', marginTop: '0.5rem', lineHeight: 1.5 }}>
                   {isHindi ? 'हमने नए टैब में व्हाट्सएप खोल दिया है। क्या आपने मर्चेंट को बुकिंग मैसेज भेज दिया है?' : "We have opened WhatsApp in a new tab. Did you click send to deliver your booking details to the merchant?"}
                 </p>
               </div>
@@ -468,7 +507,7 @@ export default function StorefrontClient({
                   <Check size={18} />
                   <span>{isHindi ? 'हाँ, मैंने मैसेज भेज दिया है' : 'Yes, I sent the message'}</span>
                 </button>
-                <button onClick={() => { setShowWAConfirmation(false); setPendingBookingData(null); }} className="btn btn-outline" style={{ width: '100%', padding: '0.85rem', color: '#64748b', borderColor: '#cbd5e1' }}>
+                <button onClick={() => { setShowWAConfirmation(false); setPendingBookingData(null); }} className="btn btn-outline" style={{ width: '100%', padding: '0.85rem', color: 'var(--muted)', borderColor: 'var(--border)' }}>
                   <span>{isHindi ? 'नहीं, बुकिंग रद्द करें' : 'No, cancel booking'}</span>
                 </button>
               </div>

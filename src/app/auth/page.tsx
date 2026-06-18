@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import Link from "next/link";
-import { Lock, Mail, User, AlertCircle, ArrowRight, Phone } from "lucide-react";
+import { Lock, Mail, User, AlertCircle, ArrowRight, Phone, Sun, Moon } from "lucide-react";
 import { useEffect, useState, Suspense } from "react";
 
 function AuthForm() {
@@ -21,6 +21,29 @@ function AuthForm() {
   const [loading, setLoading] = useState(false);
 
   const { data: session, isPending } = authClient.useSession();
+
+  // Theme state
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  // Load and apply initial theme
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+      const isDark = savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      setTheme(isDark ? 'dark' : 'light');
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(nextTheme);
+    localStorage.setItem('theme', nextTheme);
+    if (nextTheme === 'dark') {
+      document.body.classList.add('dark-theme');
+    } else {
+      document.body.classList.remove('dark-theme');
+    }
+  };
 
   // If already logged in, redirect to dashboard
   useEffect(() => {
@@ -49,7 +72,6 @@ function AuthForm() {
         provider: "google",
         callbackURL: "/auth/onboard",
       });
-      // better-auth redirects to /auth/onboard after OAuth completes
     } catch (err: any) {
       setError(err.message || "Google sign-in failed. Please try again.");
       setLoading(false);
@@ -120,10 +142,21 @@ function AuthForm() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center px-4 relative bg-[#f8fafc] text-[#0f172a] overflow-hidden">
+    <div className="min-h-screen flex flex-col justify-center items-center px-4 relative bg-[var(--background)] text-[var(--foreground)] overflow-hidden transition-colors duration-300">
+      {/* Theme Toggle */}
+      <div className="absolute top-4 right-4 z-20">
+        <button
+          onClick={toggleTheme}
+          className="p-2.5 rounded-xl border border-[var(--border)] bg-[var(--card)]/80 text-[var(--foreground)] hover:bg-[var(--muted-light)] transition flex items-center justify-center shadow-sm"
+          aria-label="Toggle Theme"
+        >
+          {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
+        </button>
+      </div>
+
       {/* Background decoration */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-200/20 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-200/20 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-200/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-200/10 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="w-full max-w-md z-10">
         {/* Header/Logo */}
@@ -139,7 +172,7 @@ function AuthForm() {
           <h2 className="text-2xl font-bold font-title">
             {isLogin ? "Welcome Back" : "Grow Your Business"}
           </h2>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-sm text-[var(--muted)] mt-1">
             {isLogin
               ? "Access your WhatsApp bookings dashboard"
               : "Create an owner account and set up your booking link"}
@@ -147,21 +180,20 @@ function AuthForm() {
         </div>
 
         {/* Form Card */}
-        <div className="bg-white/80 backdrop-blur-md rounded-2xl p-8 shadow-xl border border-slate-200/50">
+        <div className="bg-[var(--card)]/80 backdrop-blur-md rounded-2xl p-8 shadow-xl border border-[var(--border)]">
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm flex items-start gap-2">
+            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm flex items-start gap-2">
               <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
           )}
 
-
           <form onSubmit={handleSubmit} className="space-y-5">
             {!isLogin && (
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-600">Full Name</label>
+                <label className="text-xs font-semibold text-[var(--muted)]">Full Name</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)] opacity-70">
                     <User size={18} />
                   </span>
                   <input
@@ -170,7 +202,7 @@ function AuthForm() {
                     placeholder="John Doe"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 text-sm bg-white"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--border)] focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 text-sm bg-[var(--card)] text-[var(--foreground)]"
                   />
                 </div>
               </div>
@@ -178,9 +210,9 @@ function AuthForm() {
 
             {!isLogin && bizName && (
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-600">WhatsApp Phone Number</label>
+                <label className="text-xs font-semibold text-[var(--muted)]">WhatsApp Phone Number</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)] opacity-70">
                     <Phone size={18} />
                   </span>
                   <input
@@ -189,19 +221,19 @@ function AuthForm() {
                     placeholder="e.g. +91 98765 43210"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 text-sm bg-white"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--border)] focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 text-sm bg-[var(--card)] text-[var(--foreground)]"
                   />
                 </div>
-                <p className="text-[10px] text-slate-400 mt-1">
+                <p className="text-[10px] text-[var(--muted)] opacity-85 mt-1">
                   Customers will use this number to send booking requests directly on WhatsApp.
                 </p>
               </div>
             )}
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-600">Email Address</label>
+              <label className="text-xs font-semibold text-[var(--muted)]">Email Address</label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)] opacity-70">
                   <Mail size={18} />
                 </span>
                 <input
@@ -210,15 +242,15 @@ function AuthForm() {
                   placeholder="name@company.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 text-sm bg-white"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--border)] focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 text-sm bg-[var(--card)] text-[var(--foreground)]"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-600">Password</label>
+              <label className="text-xs font-semibold text-[var(--muted)]">Password</label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)] opacity-70">
                   <Lock size={18} />
                 </span>
                 <input
@@ -227,7 +259,7 @@ function AuthForm() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 text-sm bg-white"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--border)] focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 text-sm bg-[var(--card)] text-[var(--foreground)]"
                 />
               </div>
             </div>
@@ -250,9 +282,9 @@ function AuthForm() {
 
           {/* Divider */}
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", margin: "1.25rem 0" }}>
-            <div style={{ flex: 1, height: "1px", background: "#e2e8f0" }} />
-            <span style={{ fontSize: "0.75rem", color: "#94a3b8", fontWeight: 500, whiteSpace: "nowrap" }}>or continue with Google</span>
-            <div style={{ flex: 1, height: "1px", background: "#e2e8f0" }} />
+            <div style={{ flex: 1, height: "1px", background: "var(--border)" }} />
+            <span style={{ fontSize: "0.75rem", color: "var(--muted)", fontWeight: 500, whiteSpace: "nowrap" }}>or continue with Google</span>
+            <div style={{ flex: 1, height: "1px", background: "var(--border)" }} />
           </div>
 
           {/* Google Sign-In Button */}
@@ -267,19 +299,19 @@ function AuthForm() {
               justifyContent: "center",
               gap: "0.625rem",
               padding: "0.75rem 1rem",
-              background: "white",
-              border: "1.5px solid #e2e8f0",
+              background: "var(--card)",
+              border: "1.5px solid var(--border)",
               borderRadius: "0.75rem",
               fontSize: "0.875rem",
               fontWeight: 600,
-              color: "#1e293b",
+              color: "var(--foreground)",
               cursor: loading ? "not-allowed" : "pointer",
               opacity: loading ? 0.6 : 1,
-              transition: "box-shadow 0.2s ease, border-color 0.2s ease",
+              transition: "background-color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease",
               boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
             }}
             onMouseEnter={(e) => { if (!loading) { (e.currentTarget as HTMLButtonElement).style.borderColor = "#6366f1"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 0 3px rgba(99,102,241,0.12)"; } }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#e2e8f0"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 1px 3px rgba(0,0,0,0.06)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border)"; (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 1px 3px rgba(0,0,0,0.06)"; }}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -290,7 +322,7 @@ function AuthForm() {
             Continue with Google
           </button>
 
-          <div className="text-center mt-6 pt-5 border-t border-slate-100 text-sm text-slate-500">
+          <div className="text-center mt-6 pt-5 border-t border-[var(--border)] text-sm text-[var(--muted)]">
             {isLogin ? (
               <>
                 New to Bookze?{" "}
@@ -317,7 +349,7 @@ function AuthForm() {
 
         {/* Back Link */}
         <div className="text-center mt-6">
-          <Link href="/" className="text-xs font-medium text-slate-500 hover:text-slate-800 transition">
+          <Link href="/" className="text-xs font-medium text-[var(--muted)] hover:text-[var(--foreground)] transition">
             ← Back to Platform Home
           </Link>
         </div>
@@ -329,12 +361,12 @@ function AuthForm() {
 export default function AuthPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-[#f8fafc] text-[#0f172a]">
+      <div className="min-h-screen flex items-center justify-center bg-[var(--background)] text-[var(--foreground)]">
         <div className="text-center">
           <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-extrabold text-xl shadow-md mx-auto mb-4 animate-bounce">
             B
           </div>
-          <p className="text-sm text-slate-500 font-medium">Loading auth details...</p>
+          <p className="text-sm text-[var(--muted)] font-medium">Loading auth details...</p>
         </div>
       </div>
     }>
