@@ -29,6 +29,18 @@ function AuthForm() {
     }
   }, [session, isPending, router]);
 
+  // Cache pending business name and category to sessionStorage for OAuth redirect persistence
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (bizName) {
+        sessionStorage.setItem("pending_bizName", bizName);
+      }
+      if (category) {
+        sessionStorage.setItem("pending_category", category);
+      }
+    }
+  }, [bizName, category]);
+
   const handleGoogleSignIn = async () => {
     setError("");
     setLoading(true);
@@ -91,6 +103,10 @@ function AuthForm() {
             } catch (err) {
               console.error("Auto-creation of business failed:", err);
             }
+          }
+          if (typeof window !== "undefined") {
+            sessionStorage.removeItem("pending_bizName");
+            sessionStorage.removeItem("pending_category");
           }
           router.push("/dashboard");
           router.refresh();

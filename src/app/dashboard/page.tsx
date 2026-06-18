@@ -189,6 +189,7 @@ export default function MerchantDashboard() {
         setAnalytics(analyticsData);
       } else {
         setBusiness(null);
+        router.push("/auth/onboard");
       }
     } catch (err) {
       console.error("Error loading dashboard data:", err);

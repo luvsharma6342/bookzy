@@ -4,12 +4,14 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import Link from "next/link";
-import { Phone, ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
+import { Phone, ArrowRight, Loader2, CheckCircle2, Store, Tag } from "lucide-react";
 
 export default function OnboardPage() {
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
 
+  const [businessName, setBusinessName] = useState("");
+  const [bizCategory, setBizCategory] = useState("Salons & Beauty Parlours");
   const [phone, setPhone] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,12 +27,31 @@ export default function OnboardPage() {
       return;
     }
 
+    // Try fetching pending details from sessionStorage
+    if (typeof window !== "undefined") {
+      const cachedName = sessionStorage.getItem("pending_bizName");
+      const cachedCategory = sessionStorage.getItem("pending_category");
+      if (cachedName) {
+        setBusinessName(cachedName);
+      } else {
+        const nameVal = session?.user?.name || "My Business";
+        setBusinessName(nameVal.endsWith("s") || nameVal.endsWith("S") ? `${nameVal}'s Store` : `${nameVal}'s Salon`);
+      }
+      if (cachedCategory) {
+        setBizCategory(cachedCategory);
+      }
+    }
+
     // Check if they already have a business set up
     fetch("/api/businesses")
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
           // Already onboarded — skip straight to dashboard
+          if (typeof window !== "undefined") {
+            sessionStorage.removeItem("pending_bizName");
+            sessionStorage.removeItem("pending_category");
+          }
           router.replace("/dashboard");
         } else {
           setChecking(false);
@@ -43,17 +64,21 @@ export default function OnboardPage() {
     e.preventDefault();
     setError("");
 
-    const cleaned = phone.trim();
-    if (!cleaned) {
+    const cleanedPhone = phone.trim();
+    const cleanedName = businessName.trim();
+
+    if (!cleanedName) {
+      setError("Please enter your Business Name.");
+      return;
+    }
+    if (!cleanedPhone) {
       setError("Please enter your WhatsApp phone number.");
       return;
     }
 
     setLoading(true);
     try {
-      // Create a minimal business profile so the merchant can finish setup in the dashboard
-      const name = session?.user?.name || "My Business";
-      const slug = name
+      const slug = cleanedName
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)+/g, "") || "my-store";
@@ -62,10 +87,10 @@ export default function OnboardPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name,
+          name: cleanedName,
           slug,
-          phone: cleaned,
-          category: "Salons & Beauty Parlours",
+          phone: cleanedPhone,
+          category: bizCategory,
           city: "",
           description: "",
         }),
@@ -80,10 +105,10 @@ export default function OnboardPage() {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              name,
+              name: cleanedName,
               slug: retrySlug,
-              phone: cleaned,
-              category: "Salons & Beauty Parlours",
+              phone: cleanedPhone,
+              category: bizCategory,
               city: "",
               description: "",
             }),
@@ -92,6 +117,11 @@ export default function OnboardPage() {
         } else {
           throw new Error(body?.error || "Failed to create your business profile.");
         }
+      }
+
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem("pending_bizName");
+        sessionStorage.removeItem("pending_category");
       }
 
       router.push("/dashboard");
@@ -138,9 +168,9 @@ export default function OnboardPage() {
             Google account connected
           </div>
 
-          <h2 className="text-2xl font-bold font-title mt-1">One last step</h2>
+          <h2 className="text-2xl font-bold font-title mt-1">Setup your storefront</h2>
           <p className="text-sm text-slate-500 mt-1">
-            Enter your WhatsApp number so customers can reach you &amp; book appointments.
+            Customize your business details below to finish setting up your Bookze page.
           </p>
         </div>
 
@@ -153,6 +183,54 @@ export default function OnboardPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Business Name Input */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-600">
+                Business Name
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                  <Store size={18} />
+                </span>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Priya's Premium Salon"
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 text-sm bg-white"
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            {/* Category Selector */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-600">
+                Business Category
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                  <Tag size={18} />
+                </span>
+                <select
+                  value={bizCategory}
+                  onChange={(e) => setBizCategory(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 text-sm bg-white appearance-none"
+                >
+                  <option value="Salons & Beauty Parlours">Salons & Beauty Parlours</option>
+                  <option value="Gyms & Yoga Studios">Gyms & Yoga Studios</option>
+                  <option value="Tutors & Coaching Classes">Tutors & Coaching Classes</option>
+                  <option value="Clinics & Doctors">Clinics & Doctors</option>
+                  <option value="Local Services (Plumbers/Carpenters)">Local Services (Plumbers/Carpenters)</option>
+                </select>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
+                  ▼
+                </div>
+              </div>
+            </div>
+
+            {/* WhatsApp Phone Number */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-600">
                 WhatsApp Business Number
@@ -168,7 +246,6 @@ export default function OnboardPage() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 text-sm bg-white"
-                  autoFocus
                 />
               </div>
               <p className="text-[11px] text-slate-400 mt-1">
@@ -196,7 +273,7 @@ export default function OnboardPage() {
           </form>
 
           <p className="text-center text-xs text-slate-400 mt-4">
-            You can update this number anytime from your dashboard settings.
+            You can update these details anytime from your dashboard settings.
           </p>
         </div>
       </div>
