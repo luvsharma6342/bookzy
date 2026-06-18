@@ -73,6 +73,23 @@ export default function StorefrontClient({
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('');
 
+  // Reset selected staff if they don't offer the new selected service
+  useEffect(() => {
+    if (selectedService && selectedStaff) {
+      const isAvailable = !selectedStaff.services || selectedStaff.services.length === 0 || selectedStaff.services.some((s) => s.id === selectedService.id);
+      if (!isAvailable) {
+        setSelectedStaff(null);
+      }
+    }
+  }, [selectedService, selectedStaff]);
+
+  const availableStaff = selectedService
+    ? staffList.filter((st) => {
+        if (!st.services || st.services.length === 0) return true;
+        return st.services.some((s) => s.id === selectedService.id);
+      })
+    : staffList;
+
   // Customer details for WhatsApp redirect
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -394,14 +411,14 @@ export default function StorefrontClient({
                 </div>
 
                 {/* Staff Selection */}
-                {staffList.length > 0 && (
+                {availableStaff.length > 0 && (
                   <div>
                     <label className="form-label">{isHindi ? 'स्टाफ सदस्य चुनें (वैकल्पिक)' : 'Select Staff Member (Optional)'}</label>
                     <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.35rem' }}>
                       <button onClick={() => setSelectedStaff(null)} style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '0.8rem', background: selectedStaff === null ? '#6366f1' : 'var(--card)', color: selectedStaff === null ? 'white' : 'var(--foreground)', cursor: 'pointer' }}>
                         {isHindi ? 'कोई भी' : 'Any Staff'}
                       </button>
-                      {staffList.map((st) => (
+                      {availableStaff.map((st) => (
                         <button key={st.id} onClick={() => setSelectedStaff(st)} style={{ padding: '0.4rem 0.8rem', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '0.8rem', background: selectedStaff?.id === st.id ? '#6366f1' : 'var(--card)', color: selectedStaff?.id === st.id ? 'white' : 'var(--foreground)', cursor: 'pointer' }}>
                           {st.name}
                         </button>

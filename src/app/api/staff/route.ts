@@ -16,7 +16,10 @@ export async function GET(req: NextRequest) {
   const cached = await cacheGet(cacheKeys.staff(businessId));
   if (cached) return NextResponse.json(cached);
 
-  const staff = await prisma.staff.findMany({ where: { businessId } });
+  const staff = await prisma.staff.findMany({ 
+    where: { businessId },
+    include: { services: true }
+  });
 
   await cacheSet(cacheKeys.staff(businessId), staff, TTL.STOREFRONT);
   return NextResponse.json(staff);
@@ -31,7 +34,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { id, businessId, name, role, photoUrl, rating } = body;
+    const { id, businessId, name, role, photoUrl, rating, serviceIds } = body;
 
     if (!businessId || !name || !role) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -56,7 +59,11 @@ export async function POST(req: NextRequest) {
           role,
           photoUrl: photoUrl || null,
           rating: rating ? parseFloat(rating) : undefined,
+          services: serviceIds ? {
+            set: serviceIds.map((sid: string) => ({ id: sid }))
+          } : undefined
         },
+        include: { services: true }
       });
     } else {
       staffMember = await prisma.staff.create({
@@ -66,7 +73,11 @@ export async function POST(req: NextRequest) {
           photoUrl: photoUrl || null,
           rating: rating ? parseFloat(rating) : 5.0,
           businessId,
+          services: serviceIds ? {
+            connect: serviceIds.map((sid: string) => ({ id: sid }))
+          } : undefined
         },
+        include: { services: true }
       });
     }
 

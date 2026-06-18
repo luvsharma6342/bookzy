@@ -143,6 +143,64 @@ export default function MerchantDashboard() {
   const [addBkPrice, setAddBkPrice] = useState(0);
   const [addBkNotes, setAddBkNotes] = useState('');
 
+  // Add/Edit Staff modal state
+  const [showAddStaffModal, setShowAddStaffModal] = useState(false);
+  const [editingStaff, setEditingStaff] = useState<Staff | null>(null);
+  const [staffName, setStaffName] = useState('');
+  const [staffRole, setStaffRole] = useState('Stylist');
+  const [staffSelectedServiceIds, setStaffSelectedServiceIds] = useState<string[]>([]);
+  const [staffLoading, setStaffLoading] = useState(false);
+
+  const openAddStaff = () => {
+    setEditingStaff(null);
+    setStaffName('');
+    setStaffRole('Stylist');
+    setStaffSelectedServiceIds([]);
+    setShowAddStaffModal(true);
+  };
+
+  const openEditStaff = (st: Staff) => {
+    setEditingStaff(st);
+    setStaffName(st.name);
+    setStaffRole(st.role);
+    const associatedServiceIds = st.services ? st.services.map((s: any) => s.id) : [];
+    setStaffSelectedServiceIds(associatedServiceIds);
+    setShowAddStaffModal(true);
+  };
+
+  const handleSaveStaff = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!staffName.trim() || !staffRole.trim() || !business) return;
+
+    setStaffLoading(true);
+    try {
+      const res = await fetch("/api/staff", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingStaff?.id,
+          businessId: business.id,
+          name: staffName.trim(),
+          role: staffRole.trim(),
+          rating: editingStaff?.rating || 5.0,
+          serviceIds: staffSelectedServiceIds
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to save staff profile");
+      }
+
+      showToast(`Staff profile ${editingStaff ? 'updated' : 'added'} successfully!`, 'success');
+      setShowAddStaffModal(false);
+      reloadData(business.id);
+    } catch (err: any) {
+      showToast(err.message || "Error saving staff", 'error');
+    } finally {
+      setStaffLoading(false);
+    }
+  };
+
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 4000);
@@ -2049,23 +2107,7 @@ export default function MerchantDashboard() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ fontSize: '1.25rem' }}>Staff Profiles</h3>
               <button 
-                onClick={() => {
-                  const newName = prompt('Enter Staff Member Name:');
-                  const newRole = prompt('Enter Staff Member Role (e.g. Nail Tech):') || 'Stylist';
-                  
-                  if (newName) {
-                    fetch("/api/staff", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        businessId: business.id,
-                        name: newName,
-                        role: newRole,
-                        rating: 5.0
-                      })
-                    }).then(() => reloadData(business.id));
-                  }
-                }}
+                onClick={openAddStaff}
                 className="btn btn-primary btn-sm"
               >
                 <Plus size={16} /> Add Staff Profile
@@ -2086,18 +2128,42 @@ export default function MerchantDashboard() {
                     <strong>{st.rating} Rating</strong>
                   </div>
 
-                  <button 
-                    onClick={() => {
-                      if (confirm(`Remove staff profile for ${st.name}?`)) {
-                        fetch(`/api/staff?id=${st.id}`, { method: "DELETE" })
-                          .then(() => reloadData(business.id));
-                      }
-                    }}
-                    className="btn btn-outline btn-sm"
-                    style={{ width: '100%', marginTop: '0.75rem', padding: '0.35rem', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)' }}
-                  >
-                    Delete Staff
-                  </button>
+                  {/* Assigned Services List */}
+                  {st.services && st.services.length > 0 ? (
+                    <div style={{ fontSize: '0.7rem', color: 'var(--muted)', display: 'flex', flexWrap: 'wrap', gap: '0.25rem', justifyContent: 'center', marginTop: '0.25rem' }}>
+                      {st.services.map((s: any) => (
+                        <span key={s.id} className="badge badge-muted" style={{ fontSize: '0.6rem', padding: '0.1rem 0.4rem' }}>
+                          {s.name}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span style={{ fontSize: '0.7rem', color: 'var(--muted)', fontStyle: 'italic', marginTop: '0.25rem' }}>
+                      All Services Offered
+                    </span>
+                  )}
+
+                  <div style={{ display: 'flex', width: '100%', gap: '0.5rem', marginTop: '0.75rem' }}>
+                    <button 
+                      onClick={() => openEditStaff(st)}
+                      className="btn btn-outline btn-sm"
+                      style={{ flex: 1, padding: '0.35rem' }}
+                    >
+                      Edit
+                    </button>
+                    <button 
+                      onClick={() => {
+                        if (confirm(`Remove staff profile for ${st.name}?`)) {
+                          fetch(`/api/staff?id=${st.id}`, { method: "DELETE" })
+                            .then(() => reloadData(business.id));
+                        }
+                      }}
+                      className="btn btn-outline btn-sm"
+                      style={{ flex: 1, padding: '0.35rem', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.2)' }}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -2662,6 +2728,115 @@ export default function MerchantDashboard() {
                     {editSvcLoading
                       ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Saving...</>
                       : <><Check size={14} /> Save Changes</>
+                    }
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ─── ADD/EDIT STAFF MODAL ─────────────────────────────────── */}
+      <AnimatePresence>
+        {showAddStaffModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+            onClick={(e) => { if (e.target === e.currentTarget) setShowAddStaffModal(false); }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.18 }}
+              style={{ background: 'var(--card)', borderRadius: '16px', padding: '2rem', maxWidth: '500px', width: '100%', position: 'relative', maxHeight: '90vh', overflowY: 'auto', border: '1px solid var(--border)' }}
+            >
+              {/* Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>{editingStaff ? 'Edit Staff Profile' : 'Add Staff Profile'}</h3>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--muted)', marginTop: '0.2rem' }}>Define staff role and service offerings</p>
+                </div>
+                <button onClick={() => setShowAddStaffModal(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: '0.25rem' }}>
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Form */}
+              <form onSubmit={handleSaveStaff} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div className="form-group">
+                  <label className="form-label">Full Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Rahul Sharma"
+                    className="form-input"
+                    value={staffName}
+                    onChange={(e) => setStaffName(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Role / Title</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Master Stylist, Senior Therapist"
+                    className="form-input"
+                    value={staffRole}
+                    onChange={(e) => setStaffRole(e.target.value)}
+                  />
+                </div>
+
+                {/* Services Checklist */}
+                <div className="form-group">
+                  <label className="form-label" style={{ marginBottom: '0.5rem' }}>Assigned Services</label>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '0.75rem' }}>
+                    Select which services this staff member performs. If none are selected, they will be bookable for all services.
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '180px', overflowY: 'auto', padding: '0.5rem', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--background)' }}>
+                    {services.map((svc) => {
+                      const isChecked = staffSelectedServiceIds.includes(svc.id);
+                      return (
+                        <label key={svc.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem', padding: '0.25rem 0' }}>
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setStaffSelectedServiceIds([...staffSelectedServiceIds, svc.id]);
+                              } else {
+                                setStaffSelectedServiceIds(staffSelectedServiceIds.filter((id) => id !== svc.id));
+                              }
+                            }}
+                          />
+                          <span>{svc.name} <span style={{ color: 'var(--muted)', fontSize: '0.75rem' }}>({svc.category})</span></span>
+                        </label>
+                      );
+                    })}
+                    {services.length === 0 && (
+                      <span style={{ fontSize: '0.8rem', color: 'var(--muted)', fontStyle: 'italic', textAlign: 'center', padding: '1rem' }}>
+                        No services configured. Add services first.
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', paddingTop: '0.5rem', borderTop: '1px solid var(--border)', marginTop: '0.5rem' }}>
+                  <button type="button" onClick={() => setShowAddStaffModal(false)} className="btn btn-outline btn-sm">Cancel</button>
+                  <button
+                    type="submit"
+                    disabled={staffLoading}
+                    className="btn btn-primary btn-sm"
+                    style={{ minWidth: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
+                  >
+                    {staffLoading
+                      ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Saving...</>
+                      : 'Save Profile'
                     }
                   </button>
                 </div>

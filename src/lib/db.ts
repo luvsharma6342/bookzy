@@ -44,6 +44,7 @@ export interface Staff {
   role: string;
   photoUrl?: string;
   rating: number;
+  services?: Service[];
 }
 
 export interface Booking {

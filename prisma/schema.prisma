@@ -110,6 +110,7 @@ model Service {
   photoUrl    String?
   
   bookings    Booking[]
+  staff       Staff[]
 
   @@map("service")
 }
@@ -124,6 +125,7 @@ model Staff {
   rating      Float     @default(5.0)
   
   bookings    Booking[]
+  services    Service[]
 
   @@map("staff")
 }
