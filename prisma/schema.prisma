@@ -92,6 +92,7 @@ model Business {
   staff        Staff[]
   bookings     Booking[]
   analytics    AnalyticsEvent[]
+  blockedDates BlockedDate[]
 
   @@map("business")
 }
@@ -158,4 +159,16 @@ model AnalyticsEvent {
   timestamp  DateTime @default(now())
 
   @@map("analytics_event")
+}
+
+model BlockedDate {
+  id         String   @id @default(uuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  date       String   // Format: "YYYY-MM-DD"
+  reason     String?
+  createdAt  DateTime @default(now())
+
+  @@unique([businessId, date])
+  @@map("blocked_date")
 }

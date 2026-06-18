@@ -24,6 +24,7 @@ interface Props {
   initialServices: Service[];
   initialStaff: Staff[];
   initialBookings: Booking[];
+  initialBlockedDates?: any[];
 }
 
 export default function StorefrontClient({
@@ -31,10 +32,12 @@ export default function StorefrontClient({
   initialServices,
   initialStaff,
   initialBookings,
+  initialBlockedDates = [],
 }: Props) {
   const [services] = useState<Service[]>(initialServices);
   const [staffList] = useState<Staff[]>(initialStaff);
   const [bookings, setBookings] = useState<Booking[]>(initialBookings);
+  const [blockedDates] = useState<any[]>(initialBlockedDates);
 
   // Theme state
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
@@ -139,6 +142,17 @@ export default function StorefrontClient({
 
   // Get time slots for selected date
   const getTimeSlots = (date: Date) => {
+    // Format date in local timezone as YYYY-MM-DD
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+
+    // Check custom blocked dates
+    if (blockedDates.some(bd => bd.date === dateStr)) {
+      return [];
+    }
+
     const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
     const hours = (business.workingHours as any)[dayOfWeek];
     if (!hours || hours.closed) return [];
@@ -432,10 +446,30 @@ export default function StorefrontClient({
                   <label className="form-label">{isHindi ? 'तारीख चुनें' : 'Select Date'}</label>
                   <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem', marginTop: '0.35rem' }}>
                     {upcomingDates.map((date, idx) => {
+                      const slots = getTimeSlots(date);
+                      const isClosed = slots.length === 0;
                       const isSelected = selectedDate?.getDate() === date.getDate() && selectedDate?.getMonth() === date.getMonth();
                       return (
-                        <button key={idx} onClick={() => { setSelectedDate(date); setSelectedTimeSlot(''); }}
-                          style={{ minWidth: '55px', padding: '0.5rem 0.25rem', borderRadius: '8px', border: '1px solid var(--border)', textAlign: 'center', cursor: 'pointer', background: isSelected ? '#6366f1' : 'var(--card)', color: isSelected ? 'white' : 'var(--foreground)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                        <button 
+                          key={idx} 
+                          disabled={isClosed}
+                          onClick={() => { setSelectedDate(date); setSelectedTimeSlot(''); }}
+                          style={{ 
+                            minWidth: '55px', 
+                            padding: '0.5rem 0.25rem', 
+                            borderRadius: '8px', 
+                            border: '1px solid var(--border)', 
+                            textAlign: 'center', 
+                            cursor: isClosed ? 'not-allowed' : 'pointer', 
+                            background: isSelected ? '#6366f1' : isClosed ? 'var(--muted-light)' : 'var(--card)', 
+                            color: isSelected ? 'white' : isClosed ? 'var(--muted)' : 'var(--foreground)', 
+                            opacity: isClosed ? 0.5 : 1,
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            alignItems: 'center', 
+                            gap: '4px' 
+                          }}
+                        >
                           <span style={{ fontSize: '0.7rem', fontWeight: 600, opacity: isSelected ? 0.85 : 0.6 }}>{date.toLocaleDateString(isHindi ? 'hi-IN' : 'en-US', { weekday: 'short' })}</span>
                           <span style={{ fontSize: '1.1rem', fontWeight: 800 }}>{date.getDate()}</span>
                         </button>

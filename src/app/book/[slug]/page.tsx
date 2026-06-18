@@ -28,14 +28,15 @@ export default async function StorefrontPage({ params }: Props) {
 
   if (!business) notFound();
 
-  // ─── Parallel: services + staff + bookings (cache-aside each) ─
-  const [cachedServices, cachedStaff, cachedBookings] = await Promise.all([
+  // ─── Parallel: services + staff + bookings + blocked (cache-aside each) ─
+  const [cachedServices, cachedStaff, cachedBookings, cachedBlocked] = await Promise.all([
     cacheGet<any[]>(cacheKeys.services(business.id)),
     cacheGet<any[]>(cacheKeys.staff(business.id)),
     cacheGet<any[]>(cacheKeys.bookings(business.id)),
+    cacheGet<any[]>(cacheKeys.blockedDates(business.id)),
   ]);
 
-  const [services, staff, bookings] = await Promise.all([
+  const [services, staff, bookings, blockedDates] = await Promise.all([
     cachedServices
       ? Promise.resolve(cachedServices)
       : prisma.service.findMany({ where: { businessId: business.id } }).then(async (data) => {
@@ -58,6 +59,15 @@ export default async function StorefrontPage({ params }: Props) {
           await cacheSet(cacheKeys.bookings(business.id), data, TTL.BOOKINGS);
           return data;
         }),
+    cachedBlocked
+      ? Promise.resolve(cachedBlocked)
+      : prisma.blockedDate.findMany({
+          where: { businessId: business.id },
+          orderBy: { date: 'asc' },
+        }).then(async (data) => {
+          await cacheSet(cacheKeys.blockedDates(business.id), data, TTL.STOREFRONT);
+          return data;
+        }),
   ]);
 
   // Fire page_view analytic in background (non-blocking)
@@ -71,6 +81,7 @@ export default async function StorefrontPage({ params }: Props) {
       initialServices={services}
       initialStaff={staff}
       initialBookings={bookings}
+      initialBlockedDates={blockedDates}
     />
   );
 }

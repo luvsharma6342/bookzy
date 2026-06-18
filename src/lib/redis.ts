@@ -71,4 +71,5 @@ export const cacheKeys = {
   staff:          (bizId: string) => `staff:${bizId}`,
   bookings:       (bizId: string) => `bookings:${bizId}`,
   analytics:      (bizId: string) => `analytics:${bizId}`,
+  blockedDates:   (bizId: string) => `blocked:${bizId}`,
 };
