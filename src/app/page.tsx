@@ -169,11 +169,23 @@ export default function LandingPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           businessId: newBiz.id,
-          name: demoCategory === 'Salons & Beauty Parlours' ? 'Premium Haircut' : 'General Service Consultation',
+          name: demoCategory === 'Salons & Beauty Parlours'
+            ? 'Premium Haircut'
+            : demoCategory === 'Clinics & Doctors'
+            ? 'General Consultation'
+            : demoCategory === 'Web Development & Freelancers'
+            ? 'Website Design & Development'
+            : 'General Service Consultation',
           price: 299,
           duration: 30,
           description: 'Standard booking slot consultation service.',
-          category: 'General',
+          category: demoCategory === 'Salons & Beauty Parlours'
+            ? 'Hair Care'
+            : demoCategory === 'Clinics & Doctors'
+            ? 'Consultation'
+            : demoCategory === 'Web Development & Freelancers'
+            ? 'Web Development'
+            : 'General',
           active: true
         })
       });
@@ -407,6 +419,7 @@ export default function LandingPage() {
                   <option value="Tutors & Coaching Classes">{isHindi ? 'ट्यूशन और क्लासेस' : 'Tutors & Coaching Classes'}</option>
                   <option value="Clinics & Doctors">{isHindi ? 'क्लीनिक और डॉक्टर्स' : 'Clinics & Doctors'}</option>
                   <option value="Local Services (Plumbers/Carpenters)">{isHindi ? 'लोकल सर्विसेज (प्लम्बर/इलेक्ट्रीशियन)' : 'Local Services (Plumbers/Carpenters)'}</option>
+                  <option value="Web Development & Freelancers">{isHindi ? 'वेब डेवलपमेंट और फ्रीलांसर्स' : 'Web Development & Freelancers'}</option>
                 </select>
               </div>
             </div>

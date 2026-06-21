@@ -257,6 +257,7 @@ export default function OnboardPage() {
                   <option value="Tutors & Coaching Classes">Tutors & Coaching Classes</option>
                   <option value="Clinics & Doctors">Clinics & Doctors</option>
                   <option value="Local Services (Plumbers/Carpenters)">Local Services (Plumbers/Carpenters)</option>
+                  <option value="Web Development & Freelancers">Web Development & Freelancers</option>
                 </select>
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--muted)] text-[8px]">
                   ▼

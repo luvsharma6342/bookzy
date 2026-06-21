@@ -64,6 +64,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRazorpay } from '@/hooks/useRazorpay';
 import { isPaidPlan } from '@/lib/planOverride';
 
+const CATEGORY_MAP: Record<string, string[]> = {
+  "Salons & Beauty Parlours": ["Hair Care", "Skincare", "Nail Care", "Makeup", "Massage & Spa"],
+  "Clinics & Doctors": ["Consultation", "Dental Treatments", "Diagnostics / Tests", "Therapy", "General Checkup"],
+  "Gyms & Yoga Studios": ["Personal Training", "Group Classes", "Yoga & Meditation", "Diet & Nutrition"],
+  "Tutors & Coaching Classes": ["Academic Subjects", "Test Preparation", "Language Learning", "Coding & Tech"],
+  "Local Services (Plumbers/Carpenters)": ["Plumbing", "Electrical Work", "Carpentry", "Appliance Repair", "Cleaning"],
+  "Web Development & Freelancers": ["Web Development", "AI & Voice Agents", "Mobile App Dev", "Design & Branding", "Consulting"]
+};
+
 export default function MerchantDashboard() {
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
@@ -321,6 +330,15 @@ export default function MerchantDashboard() {
       reloadData(selectedBizId);
     }
   }, [selectedBizId, authLoading]);
+
+  // Synchronize category state when active business changes
+  useEffect(() => {
+    if (business) {
+      const cats = CATEGORY_MAP[business.category] || ["General", "Consultation"];
+      setNewServiceCategory(cats[0]);
+      setEditSvcCategory(cats[0]);
+    }
+  }, [business?.id, business?.category]);
 
   // Manage theme state
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
@@ -965,6 +983,7 @@ export default function MerchantDashboard() {
                 <option value="Clinics & Doctors">Clinics & Doctors</option>
                 <option value="Tutors & Coaching Classes">Tutors & Coaching Classes</option>
                 <option value="Local Services (Plumbers/Carpenters)">Local Services (Plumbers/Carpenters)</option>
+                <option value="Web Development & Freelancers">Web Development & Freelancers</option>
               </select>
             </div>
             <div className="form-group mb-0">
@@ -1791,12 +1810,9 @@ export default function MerchantDashboard() {
                       value={newServiceCategory}
                       onChange={(e) => setNewServiceCategory(e.target.value)}
                     >
-                      <option value="Hair Care">Hair Care</option>
-                      <option value="Skincare">Skincare</option>
-                      <option value="Nail Care">Nail Care</option>
-                      <option value="Makeup">Makeup</option>
-                      <option value="Personal Training">Personal Training</option>
-                      <option value="Group Classes">Group Classes</option>
+                      {(CATEGORY_MAP[business.category] || ["General", "Consultation"]).map((cat) => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -2507,6 +2523,7 @@ export default function MerchantDashboard() {
                     <option value="Clinics & Doctors">Clinics & Doctors</option>
                     <option value="Tutors & Coaching Classes">Tutors & Coaching Classes</option>
                     <option value="Local Services (Plumbers/Carpenters)">Local Services (Plumbers/Carpenters)</option>
+                    <option value="Web Development & Freelancers">Web Development & Freelancers</option>
                   </select>
                 </div>
               </div>
@@ -2801,14 +2818,16 @@ export default function MerchantDashboard() {
                       value={editSvcCategory}
                       onChange={(e) => setEditSvcCategory(e.target.value)}
                     >
-                      <option value="Hair Care">Hair Care</option>
-                      <option value="Skincare">Skincare</option>
-                      <option value="Nail Care">Nail Care</option>
-                      <option value="Makeup">Makeup</option>
-                      <option value="Personal Training">Personal Training</option>
-                      <option value="Group Classes">Group Classes</option>
-                      <option value="Consultation">Consultation</option>
-                      <option value="General">General</option>
+                      {(() => {
+                        const baseCats = CATEGORY_MAP[business.category] || ["General", "Consultation"];
+                        const allCats = [...baseCats];
+                        if (editSvcCategory && !allCats.includes(editSvcCategory)) {
+                          allCats.push(editSvcCategory);
+                        }
+                        return allCats.map((cat) => (
+                          <option key={cat} value={cat}>{cat}</option>
+                        ));
+                      })()}
                     </select>
                   </div>
                 </div>
