@@ -70,7 +70,7 @@ const CATEGORY_MAP: Record<string, string[]> = {
   "Gyms & Yoga Studios": ["Personal Training", "Group Classes", "Yoga & Meditation", "Diet & Nutrition"],
   "Tutors & Coaching Classes": ["Academic Subjects", "Test Preparation", "Language Learning", "Coding & Tech"],
   "Local Services (Plumbers/Carpenters)": ["Plumbing", "Electrical Work", "Carpentry", "Appliance Repair", "Cleaning"],
-  "Web Development & Freelancers": ["Web Development", "AI & Voice Agents", "Mobile App Dev", "Design & Branding", "Consulting"]
+  "Web Development & Freelancers": ["Web Development", "AI & Voice Agents", "Mobile App Dev", "Design & Branding", "Consulting", "Digital Downloads"]
 };
 
 export default function MerchantDashboard() {
