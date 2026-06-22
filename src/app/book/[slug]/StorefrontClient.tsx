@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import ChatbotSimulator from '@/components/ChatbotSimulator';
 import confetti from 'canvas-confetti';
+import { renderFormattedDescription } from '@/lib/formatter';
 
 interface Props {
   business: Business;
@@ -382,7 +383,7 @@ export default function StorefrontClient({
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'flex-start' }}>
                   <div style={{ flex: 1 }}>
                     <h4 style={{ fontSize: '1.05rem', fontWeight: 650 }}>{service.name}</h4>
-                    <p style={{ color: 'var(--muted)', fontSize: '0.8rem', margin: '0.25rem 0' }}>{service.description}</p>
+                    <div style={{ color: 'var(--muted)', fontSize: '0.8rem', margin: '0.25rem 0' }}>{renderFormattedDescription(service.description)}</div>
                     <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem', fontSize: '0.8rem', fontWeight: 600 }}>
                       <span style={{ color: '#6366f1' }}>{service.duration} mins</span>
                       <span style={{ color: '#10b981' }}>₹{service.price}</span>

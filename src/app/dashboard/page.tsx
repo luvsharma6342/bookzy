@@ -63,6 +63,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRazorpay } from '@/hooks/useRazorpay';
 import { isPaidPlan } from '@/lib/planOverride';
+import { renderFormattedDescription } from '@/lib/formatter';
 
 const CATEGORY_MAP: Record<string, string[]> = {
   "Salons & Beauty Parlours": ["Hair Care", "Skincare", "Nail Care", "Makeup", "Massage & Spa"],
@@ -1871,7 +1872,7 @@ export default function MerchantDashboard() {
                         <h4 style={{ fontSize: '1.1rem' }}>{svc.name}</h4>
                         <span className="badge badge-muted" style={{ fontSize: '0.65rem' }}>{svc.category}</span>
                       </div>
-                      <p style={{ fontSize: '0.8rem', color: 'var(--muted)', marginTop: '0.25rem' }}>{svc.description}</p>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--muted)', marginTop: '0.25rem' }}>{renderFormattedDescription(svc.description)}</div>
                       <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', fontSize: '0.85rem' }}>
                         <span>⏱️ {svc.duration} mins</span>
                         <strong>₹{svc.price}</strong>
