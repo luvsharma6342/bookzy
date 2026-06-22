@@ -16,7 +16,10 @@ export async function GET(req: NextRequest) {
   const cached = await cacheGet(cacheKeys.services(businessId));
   if (cached) return NextResponse.json(cached);
 
-  const services = await prisma.service.findMany({ where: { businessId } });
+  const services = await prisma.service.findMany({
+    where: { businessId },
+    orderBy: { position: 'asc' }
+  });
 
   await cacheSet(cacheKeys.services(businessId), services, TTL.STOREFRONT);
   return NextResponse.json(services);
@@ -61,6 +64,9 @@ export async function POST(req: NextRequest) {
         },
       });
     } else {
+      const servicesCount = await prisma.service.count({
+        where: { businessId }
+      });
       service = await prisma.service.create({
         data: {
           name,
@@ -70,6 +76,7 @@ export async function POST(req: NextRequest) {
           category: category || "General",
           active: active !== undefined ? active : true,
           businessId,
+          position: servicesCount,
         },
       });
     }
@@ -81,6 +88,51 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error("Error saving service:", error);
     return NextResponse.json({ error: error.message || "Failed to save service" }, { status: 500 });
+  }
+}
+
+export async function PUT(req: NextRequest) {
+  const session = await auth.api.getSession({ headers: await headers() });
+
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const body = await req.json();
+    const { businessId, serviceIds } = body;
+
+    if (!businessId || !Array.isArray(serviceIds)) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    const business = await prisma.business.findUnique({ where: { id: businessId } });
+
+    if (!business) {
+      return NextResponse.json({ error: "Business not found" }, { status: 404 });
+    }
+
+    if (business.ownerId && business.ownerId !== session.user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // Update positions using transaction
+    await prisma.$transaction(
+      serviceIds.map((id, index) =>
+        prisma.service.update({
+          where: { id },
+          data: { position: index },
+        })
+      )
+    );
+
+    // Invalidate services cache for this business
+    await cacheDel(cacheKeys.services(businessId));
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error("Error reordering services:", error);
+    return NextResponse.json({ error: error.message || "Failed to reorder services" }, { status: 500 });
   }
 }
 

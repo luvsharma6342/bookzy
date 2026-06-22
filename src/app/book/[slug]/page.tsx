@@ -39,7 +39,10 @@ export default async function StorefrontPage({ params }: Props) {
   const [services, staff, bookings, blockedDates] = await Promise.all([
     cachedServices
       ? Promise.resolve(cachedServices)
-      : prisma.service.findMany({ where: { businessId: business.id } }).then(async (data) => {
+      : prisma.service.findMany({
+          where: { businessId: business.id },
+          orderBy: { position: 'asc' }
+        }).then(async (data) => {
           await cacheSet(cacheKeys.services(business.id), data, TTL.STOREFRONT);
           return data;
         }),

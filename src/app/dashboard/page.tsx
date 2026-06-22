@@ -44,6 +44,7 @@ import {
   QrCode,
   Share2,
   Pencil,
+  GripVertical,
   Search,
   Sun,
   Moon
@@ -116,6 +117,75 @@ export default function MerchantDashboard() {
   const [editSvcCategory, setEditSvcCategory] = useState('Hair Care');
   const [editSvcDesc, setEditSvcDesc] = useState('');
   const [editSvcLoading, setEditSvcLoading] = useState(false);
+
+  // Reordering States
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === index) return;
+
+    const items = [...services];
+    const draggedItem = items[draggedIndex];
+    items.splice(draggedIndex, 1);
+    items.splice(index, 0, draggedItem);
+
+    setDraggedIndex(index);
+    setServices(items);
+  };
+
+  const handleDragEnd = async () => {
+    setDraggedIndex(null);
+    if (!business) return;
+    try {
+      const serviceIds = services.map(s => s.id);
+      await fetch('/api/services', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessId: business.id,
+          serviceIds
+        })
+      });
+      showToast("Service order saved!", "success");
+    } catch (err) {
+      console.error("Failed to save reordered services:", err);
+      showToast("Failed to save service order", "error");
+    }
+  };
+
+  const moveService = async (index: number, direction: number) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= services.length) return;
+
+    const items = [...services];
+    const item = items[index];
+    items.splice(index, 1);
+    items.splice(targetIndex, 0, item);
+    setServices(items);
+
+    if (!business) return;
+    try {
+      const serviceIds = items.map(s => s.id);
+      await fetch('/api/services', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessId: business.id,
+          serviceIds
+        })
+      });
+      showToast("Service order saved!", "success");
+    } catch (err) {
+      console.error("Failed to save reordered services:", err);
+      showToast("Failed to save service order", "error");
+    }
+  };
 
   // Simulation state variables
   const [wabaConnected, setWabaConnected] = useState(true);
@@ -1864,9 +1934,37 @@ export default function MerchantDashboard() {
 
             {/* List of current services */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {services.map(svc => (
-                <div key={svc.id} className="glass-card" style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              {services.map((svc, index) => (
+                <motion.div 
+                  layout
+                  key={svc.id} 
+                  className="glass-card" 
+                  draggable
+                  onDragStart={(e: any) => handleDragStart(e, index)}
+                  onDragOver={(e: any) => handleDragOver(e, index)}
+                  onDragEnd={(e: any) => handleDragEnd()}
+                  style={{ 
+                    background: 'var(--card)', 
+                    border: draggedIndex === index ? '2px dashed #6366f1' : '1px solid var(--border)',
+                    opacity: draggedIndex === index ? 0.5 : 1,
+                    cursor: 'grab',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    userSelect: 'none'
+                  }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 500,
+                    damping: 40
+                  }}
+                >
+                  {/* Drag Handle */}
+                  <div style={{ color: 'var(--muted)', cursor: 'grab', display: 'flex', alignItems: 'center', opacity: 0.5 }}>
+                    <GripVertical size={18} />
+                  </div>
+
+                  <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', width: '100%' }}>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <h4 style={{ fontSize: '1.1rem' }}>{svc.name}</h4>
@@ -1879,12 +1977,35 @@ export default function MerchantDashboard() {
                       </div>
                     </div>
 
-                    {/* Enable / Disable, Edit, and Delete */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    {/* Enable / Disable, Reorder Arrows, Edit, and Delete */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      
+                      {/* Up/Down arrow reordering buttons */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                        <button 
+                          type="button"
+                          disabled={index === 0} 
+                          onClick={(e) => { e.stopPropagation(); moveService(index, -1); }}
+                          style={{ background: 'transparent', border: 'none', cursor: index === 0 ? 'not-allowed' : 'pointer', color: 'var(--foreground)', opacity: index === 0 ? 0.2 : 0.7, padding: '2px', fontSize: '0.75rem' }}
+                          title="Move Up"
+                        >
+                          ▲
+                        </button>
+                        <button 
+                          type="button"
+                          disabled={index === services.length - 1} 
+                          onClick={(e) => { e.stopPropagation(); moveService(index, 1); }}
+                          style={{ background: 'transparent', border: 'none', cursor: index === services.length - 1 ? 'not-allowed' : 'pointer', color: 'var(--foreground)', opacity: index === services.length - 1 ? 0.2 : 0.7, padding: '2px', fontSize: '0.75rem' }}
+                          title="Move Down"
+                        >
+                          ▼
+                        </button>
+                      </div>
+
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>{svc.active ? 'Active' : 'Disabled'}</span>
                         
-                        <label className="toggle-switch">
+                        <label className="toggle-switch" onClick={(e) => e.stopPropagation()}>
                           <input 
                             type="checkbox" 
                             checked={svc.active} 
@@ -1896,7 +2017,7 @@ export default function MerchantDashboard() {
 
                       {/* Edit button */}
                       <button
-                        onClick={() => openEditService(svc)}
+                        onClick={(e) => { e.stopPropagation(); openEditService(svc); }}
                         title="Edit service"
                         style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--primary)', opacity: 0.8, padding: '0.2rem' }}
                       >
@@ -1905,7 +2026,8 @@ export default function MerchantDashboard() {
 
                       {/* Delete button */}
                       <button 
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           if (confirm('Delete this service from catalog?')) {
                             fetch(`/api/services?id=${svc.id}`, { method: "DELETE" })
                               .then(() => reloadData(business.id));
@@ -1918,7 +2040,7 @@ export default function MerchantDashboard() {
                       </button>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
 

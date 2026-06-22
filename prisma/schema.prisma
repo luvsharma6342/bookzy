@@ -109,6 +109,7 @@ model Service {
   category    String
   active      Boolean   @default(true)
   photoUrl    String?
+  position    Int       @default(0)
   
   bookings    Booking[]
   staff       Staff[]
