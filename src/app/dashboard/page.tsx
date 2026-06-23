@@ -28,7 +28,7 @@ import {
   TrendingUp, 
   Clock, 
   FileSpreadsheet, 
-  DollarSign, 
+  IndianRupee, 
   Eye, 
   MousePointerClick,
   Sparkles,
@@ -1328,7 +1328,7 @@ export default function MerchantDashboard() {
 
               <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <div style={{ height: '2.5rem', width: '2.5rem', borderRadius: '8px', background: 'rgba(234, 179, 8, 0.15)', color: '#eab308', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <DollarSign size={20} />
+                  <IndianRupee size={20} />
                 </div>
                 <div>
                   <span style={{ fontSize: '0.75rem', color: 'var(--muted)', fontWeight: 600 }}>PROJECTED REVENUE</span>
