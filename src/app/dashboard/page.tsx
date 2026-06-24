@@ -2298,9 +2298,23 @@ export default function MerchantDashboard() {
 
                   <div style={{ display: 'flex', width: '100%', gap: '0.5rem', marginTop: '0.75rem' }}>
                     <button 
+                      onClick={() => {
+                        const baseUrl = window.location.origin;
+                        const authUrl = `${baseUrl}/api/staff/google-auth?staffId=${st.id}`;
+                        navigator.clipboard.writeText(authUrl);
+                        // Using alert as fallback if showToast is not immediately available in context, but showToast should be. Let's use alert just in case for the copy.
+                        alert("Google Calendar connect link copied to clipboard! Share it with this staff member.");
+                      }}
+                      className="btn btn-outline btn-sm"
+                      style={{ flex: 1, padding: '0.35rem', borderColor: '#4285F4', color: '#4285F4', fontSize: '0.7rem' }}
+                      title="Copy Calendar Connect Link"
+                    >
+                      <Calendar size={12} style={{ display: 'inline', marginRight: '2px' }} /> Sync
+                    </button>
+                    <button 
                       onClick={() => openEditStaff(st)}
                       className="btn btn-outline btn-sm"
-                      style={{ flex: 1, padding: '0.35rem' }}
+                      style={{ flex: 1, padding: '0.35rem', fontSize: '0.7rem' }}
                     >
                       Edit
                     </button>

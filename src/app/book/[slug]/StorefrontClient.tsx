@@ -20,11 +20,15 @@ import ChatbotSimulator from '@/components/ChatbotSimulator';
 import confetti from 'canvas-confetti';
 import { renderFormattedDescription } from '@/lib/formatter';
 
+interface StorefrontBooking extends Booking {
+  service?: Service;
+}
+
 interface Props {
   business: Business;
   initialServices: Service[];
   initialStaff: Staff[];
-  initialBookings: Booking[];
+  initialBookings: StorefrontBooking[];
   initialBlockedDates?: any[];
 }
 
@@ -37,8 +41,9 @@ export default function StorefrontClient({
 }: Props) {
   const [services] = useState<Service[]>(initialServices);
   const [staffList] = useState<Staff[]>(initialStaff);
-  const [bookings, setBookings] = useState<Booking[]>(initialBookings);
+  const [bookings, setBookings] = useState<StorefrontBooking[]>(initialBookings);
   const [blockedDates] = useState<any[]>(initialBlockedDates);
+  const [googleBusyBlocks, setGoogleBusyBlocks] = useState<any[]>([]);
 
   // Theme state
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
@@ -115,11 +120,30 @@ export default function StorefrontClient({
     staffId: string | null;
   } | null>(null);
 
-  // Refresh bookings helper
-  const refreshBookings = async () => {
+  // Effect to fetch availability when selectedDate or selectedStaff changes
+  useEffect(() => {
+    if (selectedDate) {
+      refreshAvailability();
+    }
+  }, [selectedDate, selectedStaff]);
+
+  // Refresh availability helper
+  const refreshAvailability = async () => {
+    if (!selectedDate) return;
     try {
-      const res = await fetch(`/api/bookings?businessId=${business.id}`);
-      if (res.ok) setBookings(await res.json());
+      const year = selectedDate.getFullYear();
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(selectedDate.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
+      let url = `/api/bookings/availability?businessId=${business.id}&date=${dateStr}`;
+      if (selectedStaff) url += `&staffId=${selectedStaff.id}`;
+      
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        setBookings(data.bookings || []);
+        setGoogleBusyBlocks(data.googleBusyBlocks || []);
+      }
     } catch { /* ignore */ }
   };
 
@@ -175,20 +199,52 @@ export default function StorefrontClient({
   // Check if a time slot is already booked
   const isSlotBooked = (timeSlot: string) => {
     if (!selectedDate) return false;
-    return bookings.some((b) => {
+    
+    const [hoursStr, minutesPart] = timeSlot.split(':');
+    let hrs = parseInt(hoursStr);
+    const mins = parseInt(minutesPart.substring(0, 2));
+    if (timeSlot.toLowerCase().includes('pm') && hrs < 12) hrs += 12;
+    if (timeSlot.toLowerCase().includes('am') && hrs === 12) hrs = 0;
+    
+    const slotStart = new Date(selectedDate);
+    slotStart.setHours(hrs, mins, 0, 0);
+    const slotEnd = new Date(slotStart.getTime() + (selectedService?.duration || 30) * 60000);
+
+    const isBookzyBooked = bookings.some((b) => {
       const bTime = new Date(b.bookingTime);
-      const isSameDay =
-        bTime.getDate() === selectedDate.getDate() &&
-        bTime.getMonth() === selectedDate.getMonth() &&
-        bTime.getFullYear() === selectedDate.getFullYear();
-      if (!isSameDay || b.status === 'cancelled') return false;
-      const bHour = bTime.getHours();
-      const bMin = bTime.getMinutes();
-      const bIsPM = bHour >= 12;
-      const bDisplayHour = bHour > 12 ? bHour - 12 : bHour === 0 ? 12 : bHour;
-      const bSuffix = bIsPM ? 'PM' : 'AM';
-      return `${bDisplayHour}:${bMin.toString().padStart(2, '0')} ${bSuffix}` === timeSlot;
+      const bEnd = new Date(bTime.getTime() + (b.service?.duration || 30) * 60000);
+      return (slotStart < bEnd && slotEnd > bTime);
     });
+
+    if (isBookzyBooked) return true;
+
+    // Check Google Busy Blocks
+    const isGoogleBusy = googleBusyBlocks.some((block) => {
+      const blockStart = new Date(block.start);
+      const blockEnd = new Date(block.end);
+      
+      if (!selectedStaff) {
+         // If no specific staff, check if ALL available staff are busy
+         const busyStaffIds = new Set(googleBusyBlocks.filter(b => {
+             const bS = new Date(b.start);
+             const bE = new Date(b.end);
+             return slotStart < bE && slotEnd > bS;
+         }).map(b => b.staffId));
+         
+         const bookzyBusyStaffIds = new Set(bookings.filter(b => {
+             const bT = new Date(b.bookingTime);
+             const bE = new Date(bT.getTime() + (b.service?.duration || 30) * 60000);
+             return slotStart < bE && slotEnd > bT;
+         }).map(b => b.staffId));
+         
+         const totalBusyStaff = new Set([...busyStaffIds, ...bookzyBusyStaffIds]);
+         return totalBusyStaff.size >= availableStaff.length;
+      }
+
+      return (slotStart < blockEnd && slotEnd > blockStart);
+    });
+
+    return isGoogleBusy;
   };
 
   const confirmWhatsAppBooking = async () => {
@@ -213,7 +269,7 @@ export default function StorefrontClient({
       if (!bookingRes.ok) throw new Error('Failed to create booking');
 
       confetti({ particleCount: 80, spread: 60, origin: { y: 0.8 } });
-      refreshBookings();
+      refreshAvailability();
       setSelectedService(null);
       setSelectedTimeSlot('');
       setCustomerName('');
@@ -535,7 +591,7 @@ export default function StorefrontClient({
       <AnimatePresence>
         {showChatbot && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.4)', zIndex: 999 }}>
-            <ChatbotSimulator business={business} services={services} isHindi={isHindi} onClose={() => setShowChatbot(false)} onBookingComplete={() => { refreshBookings(); setTimeout(() => setShowChatbot(false), 3000); }} />
+            <ChatbotSimulator business={business} services={services} isHindi={isHindi} onClose={() => setShowChatbot(false)} onBookingComplete={() => { refreshAvailability(); setTimeout(() => setShowChatbot(false), 3000); }} />
           </motion.div>
         )}
       </AnimatePresence>

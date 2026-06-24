@@ -127,8 +127,23 @@ model Staff {
   
   bookings    Booking[]
   services    Service[]
+  googleSync  StaffGoogleSync?
 
   @@map("staff")
+}
+
+model StaffGoogleSync {
+  id                    String   @id @default(uuid())
+  staffId               String   @unique
+  staff                 Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  accessToken           String
+  refreshToken          String
+  expiryDate            BigInt
+  calendarId            String?  @default("primary")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("staff_google_sync")
 }
 
 model Booking {
@@ -146,6 +161,7 @@ model Booking {
   status        String    @default("pending") // "pending" | "confirmed" | "completed" | "cancelled" | "no_show"
   bookingSource String    @default("whatsapp_link") // "whatsapp_link" | "chatbot" | "manual"
   notes         String?
+  googleEventId String?
   createdAt     DateTime  @default(now())
 
   @@map("booking")

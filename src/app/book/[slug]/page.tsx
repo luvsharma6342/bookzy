@@ -55,6 +55,7 @@ export default async function StorefrontPage({ params }: Props) {
           where: { businessId: business.id },
           orderBy: { createdAt: 'desc' },
           take: 200,
+          include: { service: true },
         }).then(async (data) => {
           await cacheSet(cacheKeys.bookings(business.id), data, TTL.BOOKINGS);
           return data;

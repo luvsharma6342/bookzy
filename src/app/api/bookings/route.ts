@@ -113,6 +113,31 @@ export async function POST(req: NextRequest) {
     // Invalidate bookings cache so dashboard and storefront get fresh data
     await cacheDel(cacheKeys.bookings(businessId));
 
+    // Google Calendar Sync
+    if (booking.staffId) {
+      try {
+        const { createCalendarEvent } = await import("@/lib/googleCalendar");
+        const service = await prisma.service.findUnique({ where: { id: serviceId } });
+        const endTime = new Date(new Date(bookingTime).getTime() + (service?.duration || 30) * 60000);
+        
+        const gEvent = await createCalendarEvent(booking.staffId, {
+          summary: `Booking: ${service?.name || "Service"} - ${customerName}`,
+          description: `Customer: ${customerName}\nPhone: ${customerPhone}\nNotes: ${notes || "None"}`,
+          start: { dateTime: new Date(bookingTime).toISOString() },
+          end: { dateTime: endTime.toISOString() },
+        });
+
+        if (gEvent?.id) {
+          await prisma.booking.update({
+            where: { id: booking.id },
+            data: { googleEventId: gEvent.id }
+          });
+        }
+      } catch (gErr) {
+        console.error("Failed to sync booking to Google Calendar:", gErr);
+      }
+    }
+
     // Automated WhatsApp Trigger on creation
     try {
       const business = await prisma.business.findUnique({
@@ -200,6 +225,22 @@ export async function PUT(req: NextRequest) {
 
     // Invalidate bookings cache on status change
     await cacheDel(cacheKeys.bookings(booking.businessId));
+
+    // Google Calendar Sync Update
+    if (updated.staffId && updated.googleEventId) {
+      try {
+        const { deleteCalendarEvent } = await import("@/lib/googleCalendar");
+        if (status === "cancelled" || status === "no_show") {
+          await deleteCalendarEvent(updated.staffId, updated.googleEventId);
+          await prisma.booking.update({
+            where: { id },
+            data: { googleEventId: null }
+          });
+        }
+      } catch (gErr) {
+        console.error("Failed to delete Google Calendar event:", gErr);
+      }
+    }
 
     // Automated WhatsApp Trigger on no-show
     if (status === "no_show" && booking.business.metaPhoneNumberId && booking.business.metaPermanentToken && isPaidPlan(getEffectivePlan(booking.business.plan))) {
