@@ -495,7 +495,15 @@ export default function MerchantDashboard() {
   // Toggle Service active state
   const handleToggleService = async (svc: Service) => {
     if (!business) return;
+
+    // 1. Optimistically update local state immediately
+    const originalServices = [...services];
+    setServices(prev => prev.map(s => 
+      s.id === svc.id ? { ...s, active: !s.active } : s
+    ));
+
     try {
+      // 2. Send API request in background
       const res = await fetch("/api/services", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -504,11 +512,18 @@ export default function MerchantDashboard() {
           active: !svc.active
         })
       });
-      if (res.ok) {
-        reloadData(business.id);
+
+      if (!res.ok) {
+        // 3. Revert if API fails
+        throw new Error("Failed to update service on server");
       }
+      
+      // Request successful: everything is already correct visually
     } catch (err) {
       console.error(err);
+      // Revert state on failure
+      setServices(originalServices);
+      showToast("Failed to toggle service status.", "error");
     }
   };
 
@@ -1156,6 +1171,15 @@ export default function MerchantDashboard() {
             {business.plan === 'free' && (
               <span style={{ background: '#ef4444', color: 'white', fontSize: '0.6rem', padding: '1px 4px', borderRadius: '4px', marginLeft: 'auto', fontWeight: 700 }}>PRO</span>
             )}
+          </button>
+
+          <button 
+            onClick={() => setActiveView('security')} 
+            className={`btn btn-sm ${activeView === 'security' ? 'btn-primary' : 'btn-outline'}`}
+            style={{ justifyContent: 'flex-start', width: '100%', border: 'none', marginTop: '0.5rem' }}
+          >
+            <ShieldCheck size={18} />
+            <span>Password & Security</span>
           </button>
 
           <button 
