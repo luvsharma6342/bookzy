@@ -74,6 +74,15 @@ const CATEGORY_MAP: Record<string, string[]> = {
   "Web Development & Freelancers": ["Web Development", "AI & Voice Agents", "Mobile App Dev", "Design & Branding", "Consulting", "Digital Downloads"]
 };
 
+import AnalyticsView from './views/AnalyticsView';
+import BookingsView from './views/BookingsView';
+import ServicesView from './views/ServicesView';
+import AvailabilityView from './views/AvailabilityView';
+import WhatsAppView from './views/WhatsAppView';
+import StaffView from './views/StaffView';
+import SettingsView from './views/SettingsView';
+import SecurityView from './views/SecurityView';
+
 export default function MerchantDashboard() {
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
@@ -85,7 +94,7 @@ export default function MerchantDashboard() {
   const [business, setBusiness] = useState<Business | null>(null);
 
   // Active Tab / View
-  const [activeView, setActiveView] = useState<'analytics' | 'bookings' | 'services' | 'availability' | 'whatsapp' | 'staff' | 'settings'>('analytics');
+  const [activeView, setActiveView] = useState<'analytics' | 'bookings' | 'services' | 'availability' | 'whatsapp' | 'staff' | 'settings' | 'security'>('analytics');
 
   // Business state variables
   const [services, setServices] = useState<Service[]>([]);
@@ -133,6 +142,8 @@ export default function MerchantDashboard() {
   // Payment state
   const [paymentLoading, setPaymentLoading] = useState<string | null>(null);
   const [cancelLoading, setCancelLoading] = useState(false);
+  const [passwordChangeLoading, setPasswordChangeLoading] = useState(false);
+  const [hasPasswordAccount, setHasPasswordAccount] = useState<boolean | null>(null);
   const { openCheckout } = useRazorpay();
 
   // Toast notifications
@@ -340,6 +351,20 @@ export default function MerchantDashboard() {
       setEditSvcCategory(cats[0]);
     }
   }, [business?.id, business?.category]);
+
+  // Check if account has password credential linked for Change Password form
+  useEffect(() => {
+    if (activeView === 'settings') {
+      authClient.listAccounts()
+        .then(({ data }) => {
+          const hasCred = data?.some(acc => acc.providerId === "credential" || acc.providerId === "email") ?? false;
+          setHasPasswordAccount(hasCred);
+        })
+        .catch(() => {
+          setHasPasswordAccount(true); // fallback to showing password change form
+        });
+    }
+  }, [activeView]);
 
   // Manage theme state
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
@@ -1289,1281 +1314,111 @@ export default function MerchantDashboard() {
           </button>
         </header>
 
-        {/* VIEW 1: OVERVIEW & ANALYTICS CHARTS */}
+        {/* RENDERING VIEWS */}
         {activeView === 'analytics' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-            
-            {/* KPI Cards Grid */}
-            <div className="kpi-grid">
-              
-              <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ height: '2.5rem', width: '2.5rem', borderRadius: '8px', background: 'rgba(99, 102, 241, 0.15)', color: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Eye size={20} />
-                </div>
-                <div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--muted)', fontWeight: 600 }}>PAGE VIEWS</span>
-                  <h3 style={{ fontSize: '1.5rem', marginTop: '0.15rem' }}>{stats.totalViews}</h3>
-                </div>
-              </div>
-
-              <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ height: '2.5rem', width: '2.5rem', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Calendar size={20} />
-                </div>
-                <div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--muted)', fontWeight: 600 }}>TOTAL BOOKINGS</span>
-                  <h3 style={{ fontSize: '1.5rem', marginTop: '0.15rem' }}>{bookings.length}</h3>
-                </div>
-              </div>
-
-              <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ height: '2.5rem', width: '2.5rem', borderRadius: '8px', background: 'rgba(168, 85, 247, 0.15)', color: '#a855f7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <TrendingUp size={20} />
-                </div>
-                <div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--muted)', fontWeight: 600 }}>CONVERSION RATE</span>
-                  <h3 style={{ fontSize: '1.5rem', marginTop: '0.15rem' }}>{stats.conversionRate}%</h3>
-                </div>
-              </div>
-
-              <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ height: '2.5rem', width: '2.5rem', borderRadius: '8px', background: 'rgba(234, 179, 8, 0.15)', color: '#eab308', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <IndianRupee size={20} />
-                </div>
-                <div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--muted)', fontWeight: 600 }}>PROJECTED REVENUE</span>
-                  <h3 style={{ fontSize: '1.5rem', marginTop: '0.15rem' }}>₹{stats.projectedRevenue}</h3>
-                </div>
-              </div>
-
-            </div>
-
-            {/* Graphs Charts grid */}
-            <div className="grid-2">
-              
-              {/* Traffic Area Chart */}
-              <div className="glass-card">
-                <h4 style={{ fontSize: '1.05rem', marginBottom: '1.25rem' }}>Traffic vs Booking conversion</h4>
-                <div style={{ width: '100%', height: '280px', transform: 'translate3d(0,0,0)', willChange: 'transform', position: 'relative' }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4}/>
-                          <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
-                        </linearGradient>
-                        <linearGradient id="colorBookings" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
-                          <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-                      <XAxis dataKey="date" stroke="var(--muted)" fontSize={11} />
-                      <YAxis stroke="var(--muted)" fontSize={11} />
-                      <Tooltip contentStyle={{ background: 'var(--card)', borderColor: 'var(--border)', color: 'var(--foreground)' }} />
-                      <Area type="monotone" dataKey="views" name="Page Views" stroke="#6366f1" fillOpacity={1} fill="url(#colorViews)" />
-                      <Area type="monotone" dataKey="bookings" name="Bookings Created" stroke="#10b981" fillOpacity={1} fill="url(#colorBookings)" />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* Source Distribution Bar Chart */}
-              <div className="glass-card">
-                <h4 style={{ fontSize: '1.05rem', marginBottom: '1.25rem' }}>Booking Entry Points Distribution</h4>
-                <div style={{ width: '100%', height: '280px', transform: 'translate3d(0,0,0)', willChange: 'transform', position: 'relative' }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={sourceData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-                      <XAxis dataKey="name" stroke="var(--muted)" fontSize={11} />
-                      <YAxis stroke="var(--muted)" fontSize={11} />
-                      <Tooltip contentStyle={{ background: 'var(--card)', borderColor: 'var(--border)', color: 'var(--foreground)' }} />
-                      <Bar dataKey="bookings" fill="#a855f7" name="Bookings count" radius={[6, 6, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-            </div>
-
-          </div>
+          <AnalyticsView 
+            stats={stats} 
+            bookings={bookings} 
+            chartData={chartData} 
+            sourceData={sourceData} 
+          />
         )}
-
-        {/* VIEW 2: BOOKINGS MANAGER & LIST VIEW */}
+        
         {activeView === 'bookings' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            
-            {/* TODAY'S AGENDA VIEW */}
-            <div className="glass-card" style={{ background: 'var(--card)', border: '1px solid var(--border)', padding: '1.25rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none' }} onClick={() => setAgendaCollapsed(!agendaCollapsed)}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                  <Calendar size={18} style={{ color: '#6366f1' }} />
-                  <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0 }}>Today's Schedule</h3>
-                  <span className="badge badge-primary" style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', borderRadius: '6px', background: 'var(--primary)', color: 'white', fontWeight: 700 }}>
-                    {todayBookings.length} {todayBookings.length === 1 ? 'booking' : 'bookings'}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--muted)', fontWeight: 550 }}>
-                    {new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}
-                  </span>
-                  <button style={{ background: 'none', border: 'none', color: 'var(--muted)', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}>
-                    {agendaCollapsed ? 'Show' : 'Hide'}
-                  </button>
-                </div>
-              </div>
-
-              <AnimatePresence>
-                {!agendaCollapsed && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1, marginTop: '1rem' }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    style={{ overflow: 'hidden' }}
-                  >
-                    {todayBookings.length === 0 ? (
-                      <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--muted)', border: '1px dashed var(--border)', borderRadius: '8px', background: 'rgba(255,255,255,0.01)' }}>
-                        <Clock size={24} style={{ margin: '0 auto 0.5rem auto', opacity: 0.6 }} />
-                        <p style={{ fontSize: '0.85rem', margin: 0, fontWeight: 500 }}>No appointments scheduled for today.</p>
-                      </div>
-                    ) : (
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.75rem' }}>
-                        {todayBookings.map((bk) => {
-                          const svc = services.find(s => s.id === bk.serviceId);
-                          const staff = staffList.find(st => st.id === bk.staffId);
-                          const bTime = new Date(bk.bookingTime);
-                          const formattedTime = bTime.toLocaleTimeString('en-IN', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: true
-                          });
-                          
-                          const duration = svc?.duration || 30;
-                          const endTime = new Date(bTime.getTime() + duration * 60000);
-                          const formattedEndTime = endTime.toLocaleTimeString('en-IN', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: true
-                          });
-
-                          return (
-                            <div 
-                              key={bk.id} 
-                              style={{ 
-                                border: '1px solid var(--border)', 
-                                borderRadius: '8px', 
-                                padding: '0.85rem', 
-                                background: 'var(--muted-light)',
-                                display: 'flex', 
-                                flexDirection: 'column', 
-                                justifyContent: 'space-between',
-                                gap: '0.5rem',
-                                transition: 'all 0.2s ease'
-                              }}
-                              className="table-row-hover"
-                            >
-                              <div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#10b981', fontWeight: 700, fontSize: '0.8rem' }}>
-                                    <Clock size={12} />
-                                    <span>{formattedTime} - {formattedEndTime}</span>
-                                  </div>
-                                  <span className={`badge ${
-                                    bk.status === 'confirmed' ? 'badge-success' : 
-                                    (bk.status === 'pending' ? 'badge-warning' : 
-                                    (bk.status === 'completed' ? 'badge-primary' : 'badge-danger'))
-                                  }`} style={{ fontSize: '0.65rem', padding: '1px 5px', textTransform: 'uppercase' }}>
-                                    {bk.status.replace('_', '-')}
-                                  </span>
-                                </div>
-
-                                <h4 style={{ fontSize: '0.95rem', fontWeight: 700, marginTop: '0.5rem', marginBottom: '0.1rem' }}>
-                                  {bk.customerName}
-                                </h4>
-                                <div style={{ fontSize: '0.75rem', opacity: 0.6, marginBottom: '0.4rem' }}>{bk.customerPhone}</div>
-
-                                <div style={{ borderTop: '1px solid var(--border)', paddingTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-                                  <div style={{ fontSize: '0.82rem', fontWeight: 600 }}>{svc?.name || 'Deleted Service'}</div>
-                                  {staff && <div style={{ fontSize: '0.72rem', color: '#a855f7', fontWeight: 500 }}>Staff: {staff.name}</div>}
-                                </div>
-                              </div>
-
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.25rem', borderTop: '1px solid var(--border)', paddingTop: '0.5rem' }}>
-                                <span style={{ fontSize: '0.9rem', fontWeight: 800 }}>₹{bk.price}</span>
-                                
-                                {/* Quick Action Buttons */}
-                                <div style={{ display: 'flex', gap: '0.25rem' }}>
-                                  {bk.status === 'pending' && (
-                                    <>
-                                      <button 
-                                        onClick={(e) => { e.stopPropagation(); handleUpdateBookingStatus(bk, 'confirmed'); }} 
-                                        className="btn btn-secondary" 
-                                        style={{ padding: '0.2rem 0.4rem', fontSize: '0.65rem', height: '24px', border: 'none', background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', fontWeight: 700 }}
-                                        title="Accept Booking"
-                                      >
-                                        <Check size={10} /> Confirm
-                                      </button>
-                                      <button 
-                                        onClick={(e) => { e.stopPropagation(); handleUpdateBookingStatus(bk, 'cancelled'); }} 
-                                        className="btn btn-secondary" 
-                                        style={{ padding: '0.2rem 0.4rem', fontSize: '0.65rem', height: '24px', border: 'none', color: '#ef4444', fontWeight: 700 }}
-                                        title="Cancel Booking"
-                                      >
-                                        <X size={10} /> Cancel
-                                      </button>
-                                    </>
-                                  )}
-                                  {bk.status === 'confirmed' && (
-                                    <>
-                                      <button 
-                                        onClick={(e) => { e.stopPropagation(); handleUpdateBookingStatus(bk, 'completed'); }} 
-                                        className="btn btn-secondary" 
-                                        style={{ padding: '0.2rem 0.4rem', fontSize: '0.65rem', height: '24px', border: 'none', background: 'rgba(99, 102, 241, 0.1)', color: '#6366f1', fontWeight: 700 }}
-                                      >
-                                        ✓ Done
-                                      </button>
-                                      {isPaidPlan(business.plan) && (
-                                        <button 
-                                          onClick={(e) => { e.stopPropagation(); handleSendReminder(bk); }} 
-                                          className="btn btn-secondary" 
-                                          style={{ padding: '0.2rem 0.4rem', fontSize: '0.65rem', height: '24px', border: 'none', background: '#25d366', color: 'white', fontWeight: 700 }}
-                                          title="Send Reminder"
-                                        >
-                                          🔔 Remind
-                                        </button>
-                                      )}
-                                    </>
-                                  )}
-                                  {bk.status === 'completed' && isPaidPlan(business.plan) && (
-                                    <button 
-                                      onClick={(e) => { e.stopPropagation(); handleSendReviewRequest(bk); }} 
-                                      className="btn btn-secondary" 
-                                      style={{ padding: '0.2rem 0.4rem', fontSize: '0.65rem', height: '24px', border: 'none', background: 'rgba(234, 179, 8, 0.1)', color: '#eab308', fontWeight: 700 }}
-                                    >
-                                      ⭐ Ask Review
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-            
-            {/* Filter controls and Actions */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-              
-              {/* Filter Tabs */}
-              <div style={{ display: 'flex', gap: '0.35rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
-                {(['all', 'pending', 'confirmed', 'completed', 'cancelled', 'no_show'] as const).map(f => (
-                  <button 
-                    key={f}
-                    onClick={() => setBookingFilter(f)}
-                    style={{ 
-                      padding: '0.4rem 0.8rem', 
-                      borderRadius: '8px', 
-                      border: '1px solid var(--border)',
-                      fontSize: '0.75rem',
-                      fontWeight: 600,
-                      background: bookingFilter === f ? 'var(--primary)' : 'var(--card)',
-                      color: bookingFilter === f ? 'white' : 'inherit',
-                      cursor: 'pointer',
-                      textTransform: 'uppercase'
-                    }}
-                  >
-                    {f.replace('_', '-')}
-                  </button>
-                ))}
-              </div>
-
-              {/* Right-side action buttons */}
-              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                <button
-                  onClick={() => setShowAddBookingModal(true)}
-                  className="btn btn-primary btn-sm"
-                >
-                  <Plus size={15} /> Add Booking
-                </button>
-                <button onClick={handleCSVExport} className="btn btn-outline btn-sm">
-                  <FileSpreadsheet size={16} /> Export CSV
-                </button>
-              </div>
-            </div>
-
-            {/* Search & Date Filters Control Bar */}
-            <div className="glass-card" style={{ background: 'var(--card)', border: '1px solid var(--border)', padding: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', flex: 1, alignItems: 'center' }}>
-                {/* Search Customer Input */}
-                <div style={{ position: 'relative', flex: '1 1 280px', maxWidth: '400px' }}>
-                  <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />
-                  <input 
-                    type="text" 
-                    placeholder="Search customer name or phone..." 
-                    value={bookingSearch}
-                    onChange={(e) => setBookingSearch(e.target.value)}
-                    className="form-input"
-                    style={{ paddingLeft: '2.5rem', width: '100%', height: '38px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--foreground)', fontSize: '0.85rem' }}
-                  />
-                </div>
-
-                {/* Date Filters */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--muted)', fontWeight: 550 }}>Date Range:</span>
-                  <input 
-                    type="date" 
-                    value={bookingDateFrom}
-                    onChange={(e) => setBookingDateFrom(e.target.value)}
-                    className="form-input"
-                    style={{ padding: '0.4rem 0.6rem', fontSize: '0.8rem', width: 'auto', height: '38px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--foreground)' }}
-                  />
-                  <span style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>to</span>
-                  <input 
-                    type="date" 
-                    value={bookingDateTo}
-                    onChange={(e) => setBookingDateTo(e.target.value)}
-                    className="form-input"
-                    style={{ padding: '0.4rem 0.6rem', fontSize: '0.8rem', width: 'auto', height: '38px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--foreground)' }}
-                  />
-                </div>
-              </div>
-
-              {/* Clear Filters Button */}
-              {(bookingSearch || bookingDateFrom || bookingDateTo) && (
-                <button 
-                  onClick={() => {
-                    setBookingSearch('');
-                    setBookingDateFrom('');
-                    setBookingDateTo('');
-                  }}
-                  className="btn btn-secondary btn-sm"
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.8rem', padding: '0.4rem 0.8rem', height: '38px', borderRadius: '8px', border: '1px solid var(--border)' }}
-                >
-                  <X size={14} />
-                  <span>Clear Filters</span>
-                </button>
-              )}
-            </div>
-
-            {/* Bookings Data Table */}
-            <div className="glass-card" style={{ padding: 0, overflowX: 'auto' }}>
-              {filteredBookings.length === 0 ? (
-                <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--muted)' }}>
-                  <Calendar size={32} style={{ margin: '0 auto 0.75rem auto' }} />
-                  <p>
-                    {bookingSearch || bookingDateFrom || bookingDateTo 
-                      ? "No bookings found matching your search or date criteria." 
-                      : "No booking requests match your active filter."
-                    }
-                  </p>
-                </div>
-              ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border)', color: 'var(--muted)', fontWeight: 600 }}>
-                      <th style={{ padding: '1rem' }}>Customer</th>
-                      <th style={{ padding: '1rem' }}>Service Selected</th>
-                      <th style={{ padding: '1rem' }}>Schedule Time</th>
-                      <th style={{ padding: '1rem' }}>Bill</th>
-                      <th style={{ padding: '1rem' }}>Channel</th>
-                      <th style={{ padding: '1rem' }}>Status</th>
-                      <th style={{ padding: '1rem', textAlign: 'right' }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredBookings.map((bk) => {
-                      const svc = services.find(s => s.id === bk.serviceId);
-                      const staff = staffList.find(st => st.id === bk.staffId);
-                      const formattedTime = new Date(bk.bookingTime).toLocaleString('en-IN', {
-                        weekday: 'short',
-                        day: 'numeric',
-                        month: 'short',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      });
-
-                      return (
-                        <tr key={bk.id} style={{ borderBottom: '1px solid var(--border)' }} className="table-row-hover">
-                          <td style={{ padding: '1rem' }}>
-                            <div style={{ fontWeight: 600 }}>{bk.customerName}</div>
-                            <div style={{ fontSize: '0.75rem', opacity: 0.6 }}>{bk.customerPhone}</div>
-                          </td>
-                          <td style={{ padding: '1rem' }}>
-                            <div>{svc?.name || 'Deleted Service'}</div>
-                            {staff && <div style={{ fontSize: '0.75rem', color: '#a855f7' }}>with {staff.name}</div>}
-                          </td>
-                          <td style={{ padding: '1rem', fontSize: '0.85rem' }}>
-                            {formattedTime}
-                          </td>
-                          <td style={{ padding: '1rem', fontWeight: 600 }}>
-                            ₹{bk.price}
-                          </td>
-                          <td style={{ padding: '1rem' }}>
-                            <span className={`badge ${bk.bookingSource === 'chatbot' ? 'badge-success' : (bk.bookingSource === 'whatsapp_link' ? 'badge-primary' : 'badge-muted')}`}>
-                              {bk.bookingSource === 'chatbot' ? '🤖 Bot Flow' : (bk.bookingSource === 'whatsapp_link' ? '📲 WA Redirect' : '✍️ Manual')}
-                            </span>
-                          </td>
-                          <td style={{ padding: '1rem' }}>
-                            <span className={`badge ${
-                              bk.status === 'confirmed' ? 'badge-success' : 
-                              (bk.status === 'pending' ? 'badge-warning' : 
-                              (bk.status === 'completed' ? 'badge-primary' : 'badge-danger'))
-                            }`}>
-                              {bk.status.replace('_', '-')}
-                            </span>
-                          </td>
-                          <td style={{ padding: '1rem', textAlign: 'right' }}>
-                            
-                            {/* Workflow State Action Controls */}
-                            <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                              
-                              {/* Pending actions */}
-                              {bk.status === 'pending' && (
-                                <>
-                                  <button onClick={() => handleUpdateBookingStatus(bk, 'confirmed')} className="btn btn-secondary btn-sm" style={{ padding: '0.25rem 0.5rem', fontSize: '0.7rem', background: 'var(--accent-light)', color: 'var(--accent-hover)', border: 'none' }} title="Accept Booking">
-                                    <Check size={12} /> Confirm
-                                  </button>
-                                  <button onClick={() => handleUpdateBookingStatus(bk, 'cancelled')} className="btn btn-secondary btn-sm" style={{ padding: '0.25rem 0.5rem', fontSize: '0.7rem', color: 'red', border: 'none' }} title="Cancel Booking">
-                                    <X size={12} /> Cancel
-                                  </button>
-                                </>
-                              )}
-
-                              {/* Confirmed actions */}
-                              {bk.status === 'confirmed' && (
-                                <>
-                                  <button onClick={() => handleUpdateBookingStatus(bk, 'completed')} className="btn btn-secondary btn-sm" style={{ padding: '0.25rem 0.5rem', fontSize: '0.7rem', border: 'none' }}>
-                                    ✓ Done
-                                  </button>
-                                  <button onClick={() => handleUpdateBookingStatus(bk, 'no_show')} className="btn btn-secondary btn-sm" style={{ padding: '0.25rem 0.5rem', fontSize: '0.7rem', border: 'none', color: '#d97706' }}>
-                                    ⚠️ No-show
-                                  </button>
-                                  {isPaidPlan(business.plan) && (
-                                    <button onClick={() => handleSendReminder(bk)} className="btn btn-secondary btn-sm" style={{ padding: '0.25rem 0.5rem', fontSize: '0.7rem', background: '#25d366', color: 'white', border: 'none' }} title="Send Manual Reminder">
-                                      🔔 Remind
-                                    </button>
-                                  )}
-                                </>
-                              )}
-
-                              {/* Completed review trigger simulation */}
-                              {bk.status === 'completed' && isPaidPlan(business.plan) && (
-                                <button onClick={() => handleSendReviewRequest(bk)} className="btn btn-secondary btn-sm" style={{ padding: '0.25rem 0.5rem', fontSize: '0.7rem', background: '#eab308', color: 'white', border: 'none' }} title="Ask for Google Review">
-                                  ⭐ Ask Review
-                                </button>
-                              )}
-                              
-                              {/* Catchall empty */}
-                              {bk.status === 'cancelled' && <span style={{ fontSize: '0.75rem', opacity: 0.5 }}>Cancelled</span>}
-                              {bk.status === 'no_show' && <span style={{ fontSize: '0.75rem', opacity: 0.5 }}>Marked No-Show</span>}
-
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              )}
-            </div>
-
-          </div>
+          <BookingsView 
+            business={business}
+            bookings={bookings}
+            agendaCollapsed={agendaCollapsed}
+            setAgendaCollapsed={setAgendaCollapsed}
+            staffList={staffList}
+            services={services}
+            bookingFilter={bookingFilter}
+            setBookingFilter={setBookingFilter}
+            bookingSearch={bookingSearch}
+            setBookingSearch={setBookingSearch}
+            bookingDateFrom={bookingDateFrom}
+            setBookingDateFrom={setBookingDateFrom}
+            bookingDateTo={bookingDateTo}
+            setBookingDateTo={setBookingDateTo}
+            handleUpdateBookingStatus={handleUpdateBookingStatus}
+            handleSendReminder={handleSendReminder}
+            handleSendReviewRequest={handleSendReviewRequest}
+            setShowAddBookingModal={setShowAddBookingModal}
+            handleCSVExport={handleCSVExport}
+          />
         )}
 
-        {/* VIEW 3: SERVICE CATALOGUE MANAGER */}
         {activeView === 'services' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ fontSize: '1.25rem' }}>Service Catalogue ({services.length})</h3>
-              <button onClick={() => setShowAddService(!showAddService)} className="btn btn-primary btn-sm">
-                <Plus size={16} /> Add New Service
-              </button>
-            </div>
-
-            {/* Inline add service dialog mockup */}
-            {showAddService && (
-              <form onSubmit={handleAddServiceSubmit} className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', background: 'var(--card)' }}>
-                <h4 style={{ fontSize: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>New Catalog Item</h4>
-                
-                <div className="grid-2">
-                  <div className="form-group">
-                    <label className="form-label">Service Name</label>
-                    <input 
-                      type="text" 
-                      className="form-input" 
-                      required
-                      placeholder="e.g. Deep Clean facial"
-                      value={newServiceName}
-                      onChange={(e) => setNewServiceName(e.target.value)}
-                    />
-                  </div>
-                  
-                  <div className="form-group">
-                    <label className="form-label">Category</label>
-                    <select 
-                      className="form-select"
-                      value={newServiceCategory}
-                      onChange={(e) => setNewServiceCategory(e.target.value)}
-                    >
-                      {(CATEGORY_MAP[business.category] || ["General", "Consultation"]).map((cat) => (
-                        <option key={cat} value={cat}>{cat}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid-2">
-                  <div className="form-group">
-                    <label className="form-label">Price (INR)</label>
-                    <input 
-                      type="number" 
-                      className="form-input" 
-                      required
-                      min={0}
-                      value={newServicePrice}
-                      onChange={(e) => setNewServicePrice(parseInt(e.target.value))}
-                    />
-                  </div>
-                  
-                  <div className="form-group">
-                    <label className="form-label">Duration (Minutes)</label>
-                    <input 
-                      type="number" 
-                      className="form-input" 
-                      required
-                      min={5}
-                      value={newServiceDuration}
-                      onChange={(e) => setNewServiceDuration(parseInt(e.target.value))}
-                    />
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Description (Optional)</label>
-                  <textarea 
-                    className="form-textarea" 
-                    rows={2}
-                    value={newServiceDesc}
-                    onChange={(e) => setNewServiceDesc(e.target.value)}
-                    placeholder="Briefly describe what this service includes..."
-                  />
-                </div>
-
-                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                  <button type="button" onClick={() => setShowAddService(false)} className="btn btn-outline btn-sm">Cancel</button>
-                  <button type="submit" className="btn btn-primary btn-sm">Save Service</button>
-                </div>
-              </form>
-            )}
-
-            {/* List of current services */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {services.map(svc => (
-                <div key={svc.id} className="glass-card" style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <h4 style={{ fontSize: '1.1rem' }}>{svc.name}</h4>
-                        <span className="badge badge-muted" style={{ fontSize: '0.65rem' }}>{svc.category}</span>
-                      </div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--muted)', marginTop: '0.25rem' }}>{renderFormattedDescription(svc.description)}</div>
-                      <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', fontSize: '0.85rem' }}>
-                        <span>⏱️ {svc.duration} mins</span>
-                        <strong>₹{svc.price}</strong>
-                      </div>
-                    </div>
-
-                    {/* Enable / Disable, Edit, and Delete */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>{svc.active ? 'Active' : 'Disabled'}</span>
-                        
-                        <label className="toggle-switch">
-                          <input 
-                            type="checkbox" 
-                            checked={svc.active} 
-                            onChange={() => handleToggleService(svc)}
-                          />
-                          <span className="slider"></span>
-                        </label>
-                      </div>
-
-                      {/* Edit button */}
-                      <button
-                        onClick={() => openEditService(svc)}
-                        title="Edit service"
-                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--primary)', opacity: 0.8, padding: '0.2rem' }}
-                      >
-                        <Pencil size={15} />
-                      </button>
-
-                      {/* Delete button */}
-                      <button 
-                        onClick={() => {
-                          if (confirm('Delete this service from catalog?')) {
-                            fetch(`/api/services?id=${svc.id}`, { method: "DELETE" })
-                              .then(() => reloadData(business.id));
-                          }
-                        }}
-                        title="Delete service"
-                        style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', opacity: 0.6, padding: '0.2rem' }}
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-          </div>
+          <ServicesView 
+            business={business}
+            services={services}
+            CATEGORY_MAP={CATEGORY_MAP}
+            handleAddServiceSubmit={handleAddServiceSubmit}
+            handleToggleService={handleToggleService}
+            openEditService={openEditService}
+            reloadData={reloadData}
+            showAddService={showAddService}
+            setShowAddService={setShowAddService}
+            newServiceName={newServiceName}
+            setNewServiceName={setNewServiceName}
+            newServiceCategory={newServiceCategory}
+            setNewServiceCategory={setNewServiceCategory}
+            newServicePrice={newServicePrice}
+            setNewServicePrice={setNewServicePrice}
+            newServiceDuration={newServiceDuration}
+            setNewServiceDuration={setNewServiceDuration}
+            newServiceDesc={newServiceDesc}
+            setNewServiceDesc={setNewServiceDesc}
+          />
         )}
 
-        {/* VIEW 4: AVAILABILITY SETTINGS */}
         {activeView === 'availability' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <h3 style={{ fontSize: '1.25rem' }}>Working Hours Settings</h3>
-            
-            <div className="glass-card" style={{ background: 'var(--card)' }}>
-              <p style={{ fontSize: '0.9rem', color: 'var(--muted)', marginBottom: '1.5rem' }}>
-                Set the days and hours your business is open for booking. Unchecked days will block the booking calendar for customers.
-              </p>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {Object.entries(business.workingHours).map(([day, hours]) => (
-                  <div key={day} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem', flexWrap: 'wrap', gap: '1rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', width: '120px' }}>
-                      <div 
-                        style={{ 
-                          height: '1.25rem', 
-                          width: '1.25rem', 
-                          borderRadius: '4px', 
-                          border: '2px solid var(--border)', 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center',
-                          borderColor: !hours.closed ? 'var(--primary)' : 'var(--border)',
-                          background: !hours.closed ? 'var(--primary)' : 'transparent',
-                          color: 'white',
-                          cursor: 'pointer'
-                        }}
-                        onClick={() => {
-                          const updatedHours = {
-                            ...business.workingHours,
-                            [day]: { ...hours, closed: !hours.closed }
-                          };
-                          handleUpdateWorkingHours(updatedHours);
-                        }}
-                      >
-                        {!hours.closed && <Check size={10} />}
-                      </div>
-                      <strong style={{ textTransform: 'capitalize', fontSize: '0.95rem' }}>{day}</strong>
-                    </div>
-
-                    {!hours.closed ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <input 
-                          type="time" 
-                          className="form-input" 
-                          style={{ width: '110px', padding: '0.3rem 0.5rem', fontSize: '0.85rem' }} 
-                          value={hours.open}
-                          onChange={(e) => {
-                            const updatedHours = {
-                              ...business.workingHours,
-                              [day]: { ...hours, open: e.target.value }
-                            };
-                            handleUpdateWorkingHours(updatedHours);
-                          }}
-                        />
-                        <span style={{ opacity: 0.6 }}>to</span>
-                        <input 
-                          type="time" 
-                          className="form-input" 
-                          style={{ width: '110px', padding: '0.3rem 0.5rem', fontSize: '0.85rem' }} 
-                          value={hours.close}
-                          onChange={(e) => {
-                            const updatedHours = {
-                              ...business.workingHours,
-                              [day]: { ...hours, close: e.target.value }
-                            };
-                            handleUpdateWorkingHours(updatedHours);
-                          }}
-                        />
-                      </div>
-                    ) : (
-                      <span className="badge badge-danger" style={{ fontSize: '0.75rem' }}>Closed (Blocked)</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Blocked Dates / Holiday Manager Section */}
-            <div className="glass-card" style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
-                <div>
-                  <h4 style={{ fontSize: '1.1rem', fontWeight: 700 }}>📅 Holiday & Date Blocks</h4>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--muted)', marginTop: '0.15rem' }}>Mark specific calendar dates as closed (e.g. festivals, leave, holidays)</p>
-                </div>
-              </div>
-
-              {/* Add Block Form */}
-              <form onSubmit={handleBlockDate} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '1.5rem' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: '150px' }}>
-                  <label className="form-label" style={{ fontSize: '0.8rem' }}>Date *</label>
-                  <input
-                    type="date"
-                    required
-                    className="form-input"
-                    style={{ height: '38px', fontSize: '0.85rem' }}
-                    value={blockDateInput}
-                    onChange={(e) => setBlockDateInput(e.target.value)}
-                  />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', flex: 1, minWidth: '200px' }}>
-                  <label className="form-label" style={{ fontSize: '0.8rem' }}>Reason (Optional)</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Diwali Holiday, Staff Training"
-                    className="form-input"
-                    style={{ height: '38px', fontSize: '0.85rem' }}
-                    value={blockReasonInput}
-                    onChange={(e) => setBlockReasonInput(e.target.value)}
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={blockLoading}
-                  className="btn btn-primary btn-sm"
-                  style={{ height: '38px', padding: '0 1.25rem', whiteSpace: 'nowrap' }}
-                >
-                  {blockLoading ? 'Blocking...' : 'Block Date'}
-                </button>
-              </form>
-
-              {/* List of blocked dates */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <h5 style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--muted)', marginBottom: '0.25rem' }}>Active Blocks</h5>
-                {blockedDates.length === 0 ? (
-                  <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--muted)', fontSize: '0.85rem', border: '1px dashed var(--border)', borderRadius: '8px' }}>
-                    No custom blocked dates added yet. Your booking page relies on weekly hours only.
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '250px', overflowY: 'auto' }}>
-                    {blockedDates.map((bd) => (
-                      <div key={bd.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.65rem 0.85rem', background: 'var(--background)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-                          <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>
-                            {new Date(bd.date).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-                          </span>
-                          {bd.reason && <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>Reason: {bd.reason}</span>}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => handleUnblockDate(bd.id)}
-                          className="btn btn-outline btn-sm"
-                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.2)' }}
-                        >
-                          Unblock
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-          </div>
+          <AvailabilityView 
+            business={business}
+            blockedDates={blockedDates}
+            handleUpdateWorkingHours={handleUpdateWorkingHours}
+            reloadData={reloadData}
+            showToast={showToast}
+          />
         )}
 
-        {/* VIEW 5: WHATSAPP AUTOMATION WEBHOOK SETTINGS */}
         {activeView === 'whatsapp' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ fontSize: '1.25rem' }}>WhatsApp Cloud API Integration</h3>
-              <span className="badge badge-success">Pro Plan active</span>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', alignItems: 'start' }}>
-              
-              {/* Credentials Card */}
-              <div className="glass-card" style={{ background: 'var(--card)' }}>
-                <h4 style={{ fontSize: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem', marginBottom: '1rem' }}>
-                  Meta Developer Account Credentials
-                </h4>
-                
-                <form onSubmit={handleSaveWABA} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div className="form-group">
-                    <label className="form-label">Meta WABA ID</label>
-                    <input 
-                      type="text" 
-                      placeholder="e.g. 1098485743729" 
-                      className="form-input" 
-                      value={metaWabaIdInput}
-                      onChange={(e) => setMetaWabaIdInput(e.target.value)} 
-                    />
-                  </div>
-                  
-                  <div className="form-group">
-                    <label className="form-label">Meta Phone Number ID</label>
-                    <input 
-                      type="text" 
-                      placeholder="e.g. 1047285938202" 
-                      className="form-input" 
-                      value={metaPhoneNumberIdInput}
-                      onChange={(e) => setMetaPhoneNumberIdInput(e.target.value)} 
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Meta Permanent Access Token</label>
-                    <input 
-                      type="password" 
-                      placeholder="EAAGkZB...vXj" 
-                      className="form-input" 
-                      value={metaPermanentTokenInput}
-                      onChange={(e) => setMetaPermanentTokenInput(e.target.value)} 
-                    />
-                  </div>
-
-                  <button 
-                    type="submit" 
-                    className="btn btn-primary" 
-                    disabled={saveBizLoading}
-                    style={{ marginTop: '0.5rem', width: '100%' }}
-                  >
-                    {saveBizLoading ? 'Saving...' : 'Save Configuration'}
-                  </button>
-                </form>
-              </div>
-
-              {/* Setup Guide and Testing */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                
-                {/* Webhook Connection Guide */}
-                <div className="glass-card" style={{ background: 'var(--card)' }}>
-                  <h4 style={{ fontSize: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem', marginBottom: '0.75rem' }}>
-                    Webhook Configuration
-                  </h4>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: '1rem' }}>
-                    Configure Meta's developer portal webhook to point here to capture incoming responses (like canceling a booking when a user replies CANCEL).
-                  </p>
-                  
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    <div>
-                      <span className="text-xs font-semibold text-slate-400">CALLBACK URL</span>
-                      <div className="form-input" style={{ fontSize: '0.75rem', background: 'var(--muted-light)', userSelect: 'all', fontFamily: 'monospace', padding: '0.5rem' }}>
-                        https://bookze.vercel.app/api/whatsapp/webhook
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-xs font-semibold text-slate-400">VERIFY TOKEN</span>
-                      <div className="form-input" style={{ fontSize: '0.75rem', background: 'var(--muted-light)', userSelect: 'all', fontFamily: 'monospace', padding: '0.5rem' }}>
-                        bookze_whatsapp_2024
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Test Connection Card */}
-                {business?.metaPhoneNumberId && business?.metaPermanentToken && (
-                  <div className="glass-card" style={{ background: 'var(--card)' }}>
-                    <h4 style={{ fontSize: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem', marginBottom: '0.75rem' }}>
-                      Test Connection
-                    </h4>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: '1rem' }}>
-                      Send a test `booking_confirmation` template message to your phone.
-                    </p>
-                    
-                    <form onSubmit={handleSendTestWhatsApp} style={{ display: 'flex', gap: '0.5rem' }}>
-                      <input 
-                        type="tel" 
-                        placeholder="+919999999999" 
-                        required
-                        className="form-input" 
-                        style={{ flex: 1 }}
-                        value={testPhoneInput}
-                        onChange={(e) => setTestPhoneInput(e.target.value)}
-                      />
-                      <button 
-                        type="submit" 
-                        className="btn btn-primary" 
-                        disabled={testSending}
-                        style={{ padding: '0.5rem 1rem' }}
-                      >
-                        {testSending ? 'Sending...' : 'Send Test'}
-                      </button>
-                    </form>
-                  </div>
-                )}
-
-              </div>
-            </div>
-
-            {/* Template Information */}
-            <div className="glass-card" style={{ background: 'var(--card)' }}>
-              <h4 style={{ fontSize: '1rem', marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
-                Pre-Approved WhatsApp Templates
-              </h4>
-              <p style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: '1rem' }}>
-                To send messages, you must first create these template names inside your Meta Business Suite:
-              </p>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                
-                <div style={{ background: 'var(--muted-light)', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700, color: '#10b981' }}>
-                    <span>TEMPLATE: `booking_confirmation`</span>
-                    <span>REQUIRED</span>
-                  </div>
-                  <p style={{ fontSize: '0.85rem', marginTop: '0.25rem', fontFamily: 'monospace' }}>
-                    "Hi {"{{1}}"}(Name), your {"{{2}}"}(Service) appointment at {"{{3}}"}(Time) with {"{{4}}"}(Staff) is confirmed! See you then."
-                  </p>
-                </div>
-
-                <div style={{ background: 'var(--muted-light)', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700, color: '#10b981' }}>
-                    <span>TEMPLATE: `appointment_reminder`</span>
-                    <span>REQUIRED</span>
-                  </div>
-                  <p style={{ fontSize: '0.85rem', marginTop: '0.25rem', fontFamily: 'monospace' }}>
-                    "Hi {"{{1}}"}(Name), friendly reminder: your {"{{2}}"}(Service) is scheduled for today at {"{{3}}"}(Time). Reply CANCEL to cancel."
-                  </p>
-                </div>
-
-                <div style={{ background: 'var(--muted-light)', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700, color: '#10b981' }}>
-                    <span>TEMPLATE: `no_show_followup`</span>
-                    <span>REQUIRED</span>
-                  </div>
-                  <p style={{ fontSize: '0.85rem', marginTop: '0.25rem', fontFamily: 'monospace' }}>
-                    "Hi {"{{1}}"}(Name), we missed you for your {"{{2}}"}(Service) today. Want to reschedule? Reply YES and we'll find you a new slot."
-                  </p>
-                </div>
-
-              </div>
-            </div>
-
-          </div>
+          <WhatsAppView 
+            business={business}
+            reloadData={reloadData}
+            showToast={showToast}
+          />
         )}
 
-        {/* VIEW 6: STAFF SCHEDULING */}
         {activeView === 'staff' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ fontSize: '1.25rem' }}>Staff Profiles</h3>
-              <button 
-                onClick={openAddStaff}
-                className="btn btn-primary btn-sm"
-              >
-                <Plus size={16} /> Add Staff Profile
-              </button>
-            </div>
-
-            <div className="grid-3">
-              {staffList.map(st => (
-                <div key={st.id} className="glass-card" style={{ background: 'var(--card)', border: '1px solid var(--border)', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-                  <div style={{ width: '4rem', height: '4rem', borderRadius: '50%', background: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.5rem' }}>
-                    {st.name.substring(0, 2).toUpperCase()}
-                  </div>
-                  <h4 style={{ fontSize: '1.1rem', marginTop: '0.25rem' }}>{st.name}</h4>
-                  <span className="badge badge-primary" style={{ fontSize: '0.65rem' }}>{st.role}</span>
-                  
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#eab308', fontSize: '0.8rem', marginTop: '0.25rem' }}>
-                    <Star fill="#eab308" size={14} />
-                    <strong>{st.rating} Rating</strong>
-                  </div>
-
-                  {/* Assigned Services List */}
-                  {st.services && st.services.length > 0 ? (
-                    <div style={{ fontSize: '0.7rem', color: 'var(--muted)', display: 'flex', flexWrap: 'wrap', gap: '0.25rem', justifyContent: 'center', marginTop: '0.25rem' }}>
-                      {st.services.map((s: any) => (
-                        <span key={s.id} className="badge badge-muted" style={{ fontSize: '0.6rem', padding: '0.1rem 0.4rem' }}>
-                          {s.name}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <span style={{ fontSize: '0.7rem', color: 'var(--muted)', fontStyle: 'italic', marginTop: '0.25rem' }}>
-                      All Services Offered
-                    </span>
-                  )}
-
-                  <div style={{ display: 'flex', width: '100%', gap: '0.5rem', marginTop: '0.75rem' }}>
-                    <button 
-                      onClick={() => {
-                        const baseUrl = window.location.origin;
-                        const authUrl = `${baseUrl}/api/staff/google-auth?staffId=${st.id}`;
-                        navigator.clipboard.writeText(authUrl);
-                        // Using alert as fallback if showToast is not immediately available in context, but showToast should be. Let's use alert just in case for the copy.
-                        alert("Google Calendar connect link copied to clipboard! Share it with this staff member.");
-                      }}
-                      className="btn btn-outline btn-sm"
-                      style={{ flex: 1, padding: '0.35rem', borderColor: '#4285F4', color: '#4285F4', fontSize: '0.7rem' }}
-                      title="Copy Calendar Connect Link"
-                    >
-                      <Calendar size={12} style={{ display: 'inline', marginRight: '2px' }} /> Sync
-                    </button>
-                    <button 
-                      onClick={() => openEditStaff(st)}
-                      className="btn btn-outline btn-sm"
-                      style={{ flex: 1, padding: '0.35rem', fontSize: '0.7rem' }}
-                    >
-                      Edit
-                    </button>
-                    <button 
-                      onClick={() => {
-                        if (confirm(`Remove staff profile for ${st.name}?`)) {
-                          fetch(`/api/staff?id=${st.id}`, { method: "DELETE" })
-                            .then(() => reloadData(business.id));
-                        }
-                      }}
-                      className="btn btn-outline btn-sm"
-                      style={{ flex: 1, padding: '0.35rem', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.2)' }}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <StaffView 
+            business={business}
+            staffList={staffList}
+            openAddStaff={openAddStaff}
+            openEditStaff={openEditStaff}
+            reloadData={reloadData}
+          />
         )}
 
-        {/* VIEW 7: BUSINESS SETTINGS */}
         {activeView === 'settings' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <h3 style={{ fontSize: '1.25rem' }}>Business Settings</h3>
-
-            {/* ── SUBSCRIPTION & BILLING CARD ── */}
-            <div className="glass-card" style={{ background: 'var(--card)', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
-                <div style={{ width: '2.25rem', height: '2.25rem', borderRadius: '8px', background: 'rgba(99,102,241,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <CreditCard size={18} style={{ color: 'var(--primary)' }} />
-                </div>
-                <div>
-                  <h4 style={{ fontWeight: 700, fontSize: '1rem' }}>Subscription & Billing</h4>
-                  <p style={{ fontSize: '0.8rem', opacity: 0.6 }}>Manage your plan, billing, and upgrades</p>
-                </div>
-              </div>
-
-              {/* Current Plan Status */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                  <span style={{ fontSize: '0.8rem', opacity: 0.6, fontWeight: 600 }}>ACTIVE PLAN</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{
-                      fontSize: '1.5rem', fontWeight: 800,
-                      color: business.plan === 'pro' ? '#a855f7' : business.plan === 'growth' ? '#6366f1' : '#64748b'
-                    }}>
-                      {business.plan.charAt(0).toUpperCase() + business.plan.slice(1)}
-                    </span>
-                    {business.plan !== 'free' && (
-                      <span className={`badge ${
-                        business.planStatus === 'cancelled' ? 'badge-warning' :
-                        business.planStatus === 'past_due' ? 'badge-danger' : 'badge-success'
-                      }`} style={{ fontSize: '0.65rem' }}>
-                        {business.planStatus === 'cancelled' ? '⚠ Cancels Soon' :
-                         business.planStatus === 'past_due' ? '❌ Past Due' : '✓ Active'}
-                      </span>
-                    )}
-                  </div>
-                  {business.plan !== 'free' && business.planExpiresAt && (
-                    <span style={{ fontSize: '0.78rem', opacity: 0.65 }}>
-                      {business.planStatus === 'cancelled' ? 'Access until' : 'Renews on'}{' '}
-                      <strong>{new Date(business.planExpiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>
-                    </span>
-                  )}
-                  {business.plan === 'free' && (
-                    <span style={{ fontSize: '0.78rem', opacity: 0.6 }}>Free forever · Upgrade to unlock automation</span>
-                  )}
-                </div>
-
-                {/* Plan price badge */}
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--primary)' }}>
-                    {business.plan === 'free' ? '₹0' : business.plan === 'growth' ? '₹499' : '₹1,499'}
-                  </div>
-                  {business.plan !== 'free' && (
-                    <div style={{ fontSize: '0.75rem', opacity: 0.6 }}>per month</div>
-                  )}
-                </div>
-              </div>
-
-              {/* Upgrade Options */}
-              {business.plan !== 'pro' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <span style={{ fontSize: '0.8rem', fontWeight: 700, opacity: 0.7 }}>UPGRADE YOUR PLAN</span>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-
-                    {/* Growth Plan Card */}
-                    {business.plan !== 'growth' && (
-                      <div style={{ border: '2px solid #6366f1', borderRadius: '12px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontWeight: 700, color: '#6366f1' }}>Growth Plan</span>
-                          <span style={{ fontWeight: 800, color: '#6366f1' }}>₹499/mo</span>
-                        </div>
-                        <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.8rem', opacity: 0.8 }}>
-                          <li>✓ WhatsApp Auto-Reminders</li>
-                          <li>✓ Google Calendar Sync</li>
-                          <li>✓ Unlimited Services</li>
-                          <li>✓ 3 Staff Profiles</li>
-                        </ul>
-                        <button
-                          onClick={() => handleUpgrade('growth')}
-                          disabled={paymentLoading === 'growth'}
-                          className="btn btn-primary btn-sm"
-                          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
-                        >
-                          {paymentLoading === 'growth' ? (
-                            <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Processing...</>
-                          ) : (
-                            <><CreditCard size={14} /> Upgrade to Growth</>
-                          )}
-                        </button>
-                      </div>
-                    )}
-
-                    {/* Pro Plan Card */}
-                    <div style={{ border: '2px solid #a855f7', borderRadius: '12px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontWeight: 700, color: '#a855f7' }}>Pro Plan</span>
-                        <span style={{ fontWeight: 800, color: '#a855f7' }}>₹1,499/mo</span>
-                      </div>
-                      <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.8rem', opacity: 0.8 }}>
-                        <li>✓ WhatsApp AI Chatbot Flow</li>
-                        <li>✓ Auto-Confirm Bookings</li>
-                        <li>✓ Up to 10 Staff Profiles</li>
-                        <li>✓ Priority WhatsApp Support</li>
-                      </ul>
-                      <button
-                        onClick={() => handleUpgrade('pro')}
-                        disabled={paymentLoading === 'pro'}
-                        className="btn btn-sm"
-                        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', background: '#a855f7', color: 'white', border: 'none', cursor: 'pointer' }}
-                      >
-                        {paymentLoading === 'pro' ? (
-                          <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Processing...</>
-                        ) : (
-                          <><CreditCard size={14} /> Upgrade to Pro</>
-                        )}
-                      </button>
-                    </div>
-
-                  </div>
-                </div>
-              )}
-
-              {/* Cancel Subscription */}
-              {business.plan !== 'free' && business.razorpaySubscriptionId && business.planStatus === 'active' && (
-                <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
-                  <div style={{ fontSize: '0.8rem', opacity: 0.6 }}>
-                    <ShieldCheck size={14} style={{ display: 'inline', marginRight: '4px', color: '#10b981' }} />
-                    Payments secured by Razorpay. Cancel anytime, retain access until period ends.
-                  </div>
-                  <button
-                    onClick={handleCancelSubscription}
-                    disabled={cancelLoading}
-                    className="btn btn-sm"
-                    style={{ color: '#ef4444', border: '1px solid #ef4444', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem' }}
-                  >
-                    {cancelLoading ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <AlertTriangle size={12} />}
-                    Cancel Subscription
-                  </button>
-                </div>
-              )}
-
-              {/* Already cancelled notice */}
-              {business.planStatus === 'cancelled' && business.planExpiresAt && (
-                <div style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '8px', padding: '0.75rem', fontSize: '0.85rem', color: '#d97706' }}>
-                  ⚠ Your subscription is cancelled. You have full access until{' '}
-                  <strong>{new Date(business.planExpiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>.
-                  After that, the account will revert to the Free plan.
-                </div>
-              )}
-            </div>
-
-            {/* Business Details Form */}
-            <form 
-              onSubmit={async (e) => {
-                e.preventDefault();
-                if (!business) return;
-                const target = e.currentTarget;
-                const name = (target.elements.namedItem("bizName") as HTMLInputElement).value;
-                const category = (target.elements.namedItem("bizCategory") as HTMLSelectElement).value;
-                const phone = (target.elements.namedItem("bizPhone") as HTMLInputElement).value;
-                const city = (target.elements.namedItem("bizCity") as HTMLInputElement).value;
-                const description = (target.elements.namedItem("bizDesc") as HTMLTextAreaElement).value;
-
-                try {
-                  const res = await fetch("/api/businesses", {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ id: business.id, name, category, phone, city, description })
-                  });
-                  if (res.ok) {
-                    const updated = await res.json();
-                    setBusiness(updated);
-                    showToast("Business settings updated successfully!", "success");
-                    reloadData(business.id);
-                  } else {
-                    showToast("Failed to update business settings.", "error");
-                  }
-                } catch (err) {
-                  console.error(err);
-                  showToast("Failed to update business settings.", "error");
-                }
-              }}
-              className="glass-card" 
-              style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', background: 'var(--card)' }}
-            >
-              <h4 style={{ fontWeight: 700, fontSize: '0.95rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>Business Details</h4>
-              <div className="grid-2">
-                <div className="form-group">
-                  <label className="form-label">Business Name</label>
-                  <input name="bizName" type="text" required defaultValue={business.name} className="form-input" />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Category</label>
-                  <select name="bizCategory" defaultValue={business.category} className="form-select">
-                    <option value="Salons & Beauty Parlours">Salons & Beauty Parlours</option>
-                    <option value="Gyms & Yoga Studios">Gyms & Yoga Studios</option>
-                    <option value="Clinics & Doctors">Clinics & Doctors</option>
-                    <option value="Tutors & Coaching Classes">Tutors & Coaching Classes</option>
-                    <option value="Local Services (Plumbers/Carpenters)">Local Services (Plumbers/Carpenters)</option>
-                    <option value="Web Development & Freelancers">Web Development & Freelancers</option>
-                  </select>
-                </div>
-              </div>
-              <div className="grid-2">
-                <div className="form-group">
-                  <label className="form-label">WhatsApp Phone Number</label>
-                  <input name="bizPhone" type="tel" required defaultValue={business.phone} className="form-input" />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">City Location</label>
-                  <input name="bizCity" type="text" required defaultValue={business.city} className="form-input" />
-                </div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Brief Description</label>
-                <textarea name="bizDesc" defaultValue={business.description} rows={3} className="form-textarea" />
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <button type="submit" className="btn btn-primary btn-sm">Save Settings</button>
-              </div>
-            </form>
-          </div>
+          <SettingsView 
+            business={business}
+            setBusiness={setBusiness}
+            paymentLoading={paymentLoading}
+            handleUpgrade={handleUpgrade}
+            cancelLoading={cancelLoading}
+            handleCancelSubscription={handleCancelSubscription}
+            reloadData={reloadData}
+            showToast={showToast}
+          />
         )}
 
-      </main>
+        {activeView === 'security' && (
+          <SecurityView 
+            hasPasswordAccount={hasPasswordAccount}
+            showToast={showToast}
+          />
+        )}
 
       {/* ─── ADD MANUAL BOOKING MODAL ─────────────────────────────── */}
       <AnimatePresence>
@@ -3015,6 +1870,7 @@ export default function MerchantDashboard() {
           </motion.div>
         )}
       </AnimatePresence>
+      </main>
 
       <style jsx>{`
         .table-row-hover:hover {
