@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import useSWR, { mutate } from 'swr';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 import { useRouter } from 'next/navigation';
@@ -77,14 +78,20 @@ const CATEGORY_MAP: Record<string, string[]> = {
   "Web Development & Freelancers": ["Web Development", "AI & Voice Agents", "Mobile App Dev", "Design & Branding", "Consulting", "Digital Downloads"]
 };
 
-import AnalyticsView from './views/AnalyticsView';
-import BookingsView from './views/BookingsView';
-import ServicesView from './views/ServicesView';
-import AvailabilityView from './views/AvailabilityView';
-import WhatsAppView from './views/WhatsAppView';
-import StaffView from './views/StaffView';
-import SettingsView from './views/SettingsView';
-import SecurityView from './views/SecurityView';
+const LoadingView = () => (
+  <div style={{ display: 'flex', justifyContent: 'center', padding: '5rem' }}>
+    <span className="loader" style={{ width: '40px', height: '40px', border: '3px solid var(--border)', borderBottomColor: 'var(--primary)', borderRadius: '50%', display: 'inline-block', animation: 'spin 1s linear infinite' }}></span>
+  </div>
+);
+
+const AnalyticsView = dynamic(() => import('./views/AnalyticsView'), { loading: LoadingView });
+const BookingsView = dynamic(() => import('./views/BookingsView'), { loading: LoadingView });
+const ServicesView = dynamic(() => import('./views/ServicesView'), { loading: LoadingView });
+const AvailabilityView = dynamic(() => import('./views/AvailabilityView'), { loading: LoadingView });
+const WhatsAppView = dynamic(() => import('./views/WhatsAppView'), { loading: LoadingView });
+const StaffView = dynamic(() => import('./views/StaffView'), { loading: LoadingView });
+const SettingsView = dynamic(() => import('./views/SettingsView'), { loading: LoadingView });
+const SecurityView = dynamic(() => import('./views/SecurityView'), { loading: LoadingView });
 
 export default function MerchantDashboard() {
   const router = useRouter();
