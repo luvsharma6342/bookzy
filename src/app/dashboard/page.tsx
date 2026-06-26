@@ -1,7 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import useSWR, { mutate } from 'swr';
 import Link from 'next/link';
+
+const fetcher = (url: string) => fetch(url).then(res => res.json());
 import { useRouter } from 'next/navigation';
 import { authClient } from '@/lib/auth-client';
 import type { 
@@ -89,18 +92,41 @@ export default function MerchantDashboard() {
   const authLoading = isPending || !session;
 
   // Business Selection
-  const [businesses, setBusinesses] = useState<Business[]>([]);
   const [selectedBizId, setSelectedBizId] = useState<string>('');
   const [business, setBusiness] = useState<Business | null>(null);
 
   // Active Tab / View
   const [activeView, setActiveView] = useState<'analytics' | 'bookings' | 'services' | 'availability' | 'whatsapp' | 'staff' | 'settings' | 'security'>('analytics');
 
-  // Business state variables
-  const [services, setServices] = useState<Service[]>([]);
-  const [staffList, setStaffList] = useState<Staff[]>([]);
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [analytics, setAnalytics] = useState<AnalyticsEvent[]>([]);
+  // Business state variables (SWR cache)
+  const { data: rawBusinesses } = useSWR<Business[]>('/api/businesses', fetcher);
+  const { data: rawServices, mutate: mutateServices } = useSWR<Service[]>(business ? `/api/services?businessId=${business.id}` : null, fetcher);
+  const { data: rawStaffList } = useSWR<Staff[]>(business ? `/api/staff?businessId=${business.id}` : null, fetcher);
+  const { data: rawBookings } = useSWR<Booking[]>(business ? `/api/bookings?businessId=${business.id}` : null, fetcher);
+  const { data: rawAnalytics } = useSWR<AnalyticsEvent[]>(business ? `/api/analytics?businessId=${business.id}` : null, fetcher);
+  const { data: rawBlockedDates } = useSWR<any[]>(business ? `/api/blocked-dates?businessId=${business.id}` : null, fetcher);
+  
+  const businesses = rawBusinesses || [];
+  const services = rawServices || [];
+  const staffList = rawStaffList || [];
+  const bookings = rawBookings || [];
+  const analytics = rawAnalytics || [];
+  const blockedDates = rawBlockedDates || [];
+  
+  // Sync business state when businesses load
+  useEffect(() => {
+    if (businesses && businesses.length > 0) {
+      const target = selectedBizId ? businesses.find((b: Business) => b.id === selectedBizId) : businesses[0];
+      const finalTarget = target || businesses[0];
+      if (finalTarget && finalTarget.id !== business?.id) {
+        setSelectedBizId(finalTarget.id);
+        setBusiness(finalTarget);
+      }
+    } else if (businesses && businesses.length === 0) {
+      setBusiness(null);
+      router.push('/auth/onboard');
+    }
+  }, [businesses, selectedBizId, business?.id, router]);
 
   // Filtering Bookings
   const [bookingFilter, setBookingFilter] = useState<'all' | 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show'>('all');
@@ -173,7 +199,7 @@ export default function MerchantDashboard() {
   const [staffLoading, setStaffLoading] = useState(false);
 
   // Blocked dates states
-  const [blockedDates, setBlockedDates] = useState<any[]>([]);
+
   const [blockDateInput, setBlockDateInput] = useState('');
   const [blockReasonInput, setBlockReasonInput] = useState('');
   const [blockLoading, setBlockLoading] = useState(false);
@@ -291,57 +317,16 @@ export default function MerchantDashboard() {
     }
   }, [session, isPending, router]);
 
-  // Refresh DB States
+  // Refresh DB States via SWR Cache Invalidation
   const reloadData = async (bizId: string) => {
-    try {
-      const bizRes = await fetch('/api/businesses');
-      if (!bizRes.ok) throw new Error("Failed to fetch businesses");
-      const bizList = await bizRes.json();
-      setBusinesses(bizList);
-      
-      const targetBiz = bizId ? bizList.find((b: any) => b.id === bizId) : bizList[0];
-      const curBiz = targetBiz || bizList[0];
-
-      if (curBiz) {
-        setSelectedBizId(curBiz.id);
-        setBusiness(curBiz);
-
-        // Fetch companion tables
-        const [servicesRes, staffRes, bookingsRes, analyticsRes, blockedRes] = await Promise.all([
-          fetch(`/api/services?businessId=${curBiz.id}`),
-          fetch(`/api/staff?businessId=${curBiz.id}`),
-          fetch(`/api/bookings?businessId=${curBiz.id}`),
-          fetch(`/api/analytics?businessId=${curBiz.id}`),
-          fetch(`/api/blocked-dates?businessId=${curBiz.id}`)
-        ]);
-
-        const [servicesData, staffData, bookingsData, analyticsData, blockedData] = await Promise.all([
-          servicesRes.json(),
-          staffRes.json(),
-          bookingsRes.json(),
-          analyticsRes.json(),
-          blockedRes.json()
-        ]);
-
-        setServices(servicesData);
-        setStaffList(staffData);
-        setBookings(bookingsData);
-        setAnalytics(analyticsData);
-        setBlockedDates(blockedData);
-      } else {
-        setBusiness(null);
-        router.push("/auth/onboard");
-      }
-    } catch (err) {
-      console.error("Error loading dashboard data:", err);
-    }
+    if (!bizId) return;
+    mutate(`/api/services?businessId=${bizId}`);
+    mutate(`/api/staff?businessId=${bizId}`);
+    mutate(`/api/bookings?businessId=${bizId}`);
+    mutate(`/api/analytics?businessId=${bizId}`);
+    mutate(`/api/blocked-dates?businessId=${bizId}`);
+    mutate('/api/businesses');
   };
-
-  useEffect(() => {
-    if (!authLoading) {
-      reloadData(selectedBizId);
-    }
-  }, [selectedBizId, authLoading]);
 
   // Synchronize category state when active business changes
   useEffect(() => {
@@ -354,7 +339,7 @@ export default function MerchantDashboard() {
 
   // Check if account has password credential linked for Change Password form
   useEffect(() => {
-    if (activeView === 'settings') {
+    if (activeView === 'security') {
       authClient.listAccounts()
         .then(({ data }) => {
           const hasCred = data?.some(acc => acc.providerId === "credential" || acc.providerId === "email") ?? false;
@@ -494,13 +479,11 @@ export default function MerchantDashboard() {
 
   // Toggle Service active state
   const handleToggleService = async (svc: Service) => {
-    if (!business) return;
-
-    // 1. Optimistically update local state immediately
-    const originalServices = [...services];
-    setServices(prev => prev.map(s => 
+    if (!business) return;    // 1. Optimistically update local state immediately
+    const originalServices = [...(services || [])];
+    mutateServices((prev: Service[] = []) => prev.map(s => 
       s.id === svc.id ? { ...s, active: !s.active } : s
-    ));
+    ), { revalidate: false });
 
     try {
       // 2. Send API request in background
@@ -518,14 +501,14 @@ export default function MerchantDashboard() {
         throw new Error("Failed to update service on server");
       }
       
-      // Request successful: everything is already correct visually
+      // Request successful: trigger background revalidation
+      mutate(`/api/services?businessId=${business.id}`);
     } catch (err) {
       console.error(err);
       // Revert state on failure
-      setServices(originalServices);
+      mutateServices(originalServices, { revalidate: false });
       showToast("Failed to toggle service status.", "error");
-    }
-  };
+    }  };
 
   // Open edit modal pre-filled with service data
   const openEditService = (svc: Service) => {
@@ -926,11 +909,22 @@ export default function MerchantDashboard() {
       return true;
     });
 
-  if (authLoading) {
+  const isDataLoading = authLoading || (rawBusinesses && rawBusinesses.length > 0 && business && (rawServices === undefined || rawStaffList === undefined || rawBookings === undefined || rawAnalytics === undefined));
+
+  if (isDataLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white flex-col gap-4">
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent"></div>
-        <p className="text-slate-400 font-medium">Checking authorization...</p>
+        <p className="text-slate-400 font-medium">Loading Dashboard Data...</p>
+      </div>
+    );
+  }
+
+  if (rawBusinesses === undefined) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white flex-col gap-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent"></div>
+        <p className="text-slate-400 font-medium">Checking businesses...</p>
       </div>
     );
   }
@@ -1077,6 +1071,8 @@ export default function MerchantDashboard() {
       </div>
     );
   }
+
+  if (!business) return null; // Avoid rendering dashboard until business is set
 
   return (
     <div id="dashboard-wrapper" style={{ minHeight: '100vh', display: 'flex', background: 'var(--background)', color: 'var(--foreground)' }}>
