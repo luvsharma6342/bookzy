@@ -8,6 +8,7 @@ interface AnalyticsViewProps {
     totalViews: number;
     conversionRate: number;
     projectedRevenue: number;
+    totalBookings: number;
   };
   bookings: Booking[];
   chartData: any[];
@@ -35,7 +36,7 @@ export default function AnalyticsView({ stats, bookings, chartData, sourceData }
           </div>
           <div>
             <span style={{ fontSize: '0.75rem', color: 'var(--muted)', fontWeight: 600 }}>TOTAL BOOKINGS</span>
-            <h3 style={{ fontSize: '1.5rem', marginTop: '0.15rem' }}>{bookings.length}</h3>
+            <h3 style={{ fontSize: '1.5rem', marginTop: '0.15rem' }}>{stats.totalBookings}</h3>
           </div>
         </div>
 

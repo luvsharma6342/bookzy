@@ -98,20 +98,29 @@ export default function MerchantDashboard() {
   // Active Tab / View
   const [activeView, setActiveView] = useState<'analytics' | 'bookings' | 'services' | 'availability' | 'whatsapp' | 'staff' | 'settings' | 'security'>('analytics');
 
+  const [bookingsPage, setBookingsPage] = useState(1);
+  const bookingsLimit = 15;
+
   // Business state variables (SWR cache)
   const { data: rawBusinesses } = useSWR<Business[]>('/api/businesses', fetcher);
   const { data: rawServices, mutate: mutateServices } = useSWR<Service[]>(business ? `/api/services?businessId=${business.id}` : null, fetcher);
   const { data: rawStaffList } = useSWR<Staff[]>(business ? `/api/staff?businessId=${business.id}` : null, fetcher);
-  const { data: rawBookings } = useSWR<Booking[]>(business ? `/api/bookings?businessId=${business.id}` : null, fetcher);
-  const { data: rawAnalytics } = useSWR<AnalyticsEvent[]>(business ? `/api/analytics?businessId=${business.id}` : null, fetcher);
+  const { data: rawBookingsResp, mutate: mutateBookings, isValidating: isBookingsLoading } = useSWR<any>(business ? `/api/bookings?businessId=${business.id}&page=${bookingsPage}&limit=${bookingsLimit}` : null, fetcher, { keepPreviousData: true });
+  const { data: rawStats } = useSWR<any>(business ? `/api/analytics/stats?businessId=${business.id}` : null, fetcher);
   const { data: rawBlockedDates } = useSWR<any[]>(business ? `/api/blocked-dates?businessId=${business.id}` : null, fetcher);
   
   const businesses = rawBusinesses || [];
   const services = rawServices || [];
   const staffList = rawStaffList || [];
-  const bookings = rawBookings || [];
-  const analytics = rawAnalytics || [];
   const blockedDates = rawBlockedDates || [];
+
+  const bookings: Booking[] = rawBookingsResp?.data || [];
+  const bookingsMeta = rawBookingsResp?.metadata || { total: 0, page: 1, limit: bookingsLimit, totalPages: 1 };
+  
+  const stats = rawStats?.stats || { totalViews: 0, conversionRate: 0, projectedRevenue: 0, totalBookings: 0 };
+  const chartData = rawStats?.chartData || [];
+  const sourceData = rawStats?.sourceData || [];
+  const todayBookings = rawStats?.todayBookings || [];
   
   // Sync business state when businesses load
   useEffect(() => {
@@ -805,91 +814,7 @@ export default function MerchantDashboard() {
     }
   };
 
-  // CALCULATE ANALYTICS STATS
-  const calculateStats = () => {
-    const totalViews = analytics.filter(e => e.eventType === 'page_view').length;
-    const totalClicks = analytics.filter(e => e.eventType === 'book_now_click').length;
-    const totalCreated = analytics.filter(e => e.eventType === 'booking_created').length;
-    
-    // Projected Revenue (Confirmed and Completed bookings)
-    const activeBookings = bookings.filter(b => b.status === 'confirmed' || b.status === 'completed');
-    const projectedRevenue = activeBookings.reduce((sum, b) => sum + b.price, 0);
-
-    const conversionRate = totalViews > 0 
-      ? Math.round(((totalCreated + totalClicks) / totalViews) * 100) 
-      : 0;
-
-    return {
-      totalViews,
-      totalClicks,
-      totalCreated,
-      projectedRevenue,
-      conversionRate
-    };
-  };
-
-  const stats = calculateStats();
-
-  // Graph Data over past 7 days
-  const getGraphData = () => {
-    const data = [];
-    const now = new Date();
-    
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date(now);
-      date.setDate(now.getDate() - i);
-      const dateStr = date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
-      
-      const dayViews = analytics.filter(e => {
-        const evDate = new Date(e.timestamp);
-        return evDate.getDate() === date.getDate() && evDate.getMonth() === date.getMonth() && e.eventType === 'page_view';
-      }).length;
-
-      const dayBookings = bookings.filter(e => {
-        const bkDate = new Date(e.createdAt);
-        return bkDate.getDate() === date.getDate() && bkDate.getMonth() === date.getMonth();
-      }).length;
-
-      data.push({
-        date: dateStr,
-        views: dayViews || Math.floor(Math.random() * 5) + 3, // Safe fallback for visual rendering
-        bookings: dayBookings || Math.floor(Math.random() * 2)
-      });
-    }
-    return data;
-  };
-
-  const chartData = getGraphData();
-
-  // Booking source distribution charts
-  const getSourceDistribution = () => {
-    const waLink = bookings.filter(b => b.bookingSource === 'whatsapp_link').length;
-    const bot = bookings.filter(b => b.bookingSource === 'chatbot').length;
-    const manual = bookings.filter(b => b.bookingSource === 'manual').length;
-
-    return [
-      { name: 'WhatsApp Link', bookings: waLink || 2 },
-      { name: 'Chatbot Bot', bookings: bot || 3 },
-      { name: 'Manual Add', bookings: manual || 1 }
-    ];
-  };
-
-  const sourceData = getSourceDistribution();
-
-  // Get today's bookings (chronological, non-cancelled)
-  const getTodayBookings = () => {
-    const now = new Date();
-    const localToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    return bookings
-      .filter(b => {
-        const bDate = new Date(b.bookingTime);
-        const bLocal = `${bDate.getFullYear()}-${String(bDate.getMonth() + 1).padStart(2, '0')}-${String(bDate.getDate()).padStart(2, '0')}`;
-        return bLocal === localToday && b.status !== 'cancelled';
-      })
-      .sort((a, b) => new Date(a.bookingTime).getTime() - new Date(b.bookingTime).getTime());
-  };
-
-  const todayBookings = getTodayBookings();
+  // ANALYTICS STATS ARE NOW FETCHED FROM /api/analytics/stats
 
   // Filtered bookings list (status + search name/phone + date from/to)
   const filteredBookings = bookings
@@ -909,7 +834,7 @@ export default function MerchantDashboard() {
       return true;
     });
 
-  const isDataLoading = authLoading || (rawBusinesses && rawBusinesses.length > 0 && business && (rawServices === undefined || rawStaffList === undefined || rawBookings === undefined || rawAnalytics === undefined));
+  const isDataLoading = authLoading || (rawBusinesses && rawBusinesses.length > 0 && business && (rawServices === undefined || rawStaffList === undefined || rawBookingsResp === undefined || rawStats === undefined));
 
   if (isDataLoading) {
     return (
@@ -1348,6 +1273,10 @@ export default function MerchantDashboard() {
           <BookingsView 
             business={business}
             bookings={bookings}
+            bookingsMeta={bookingsMeta}
+            bookingsPage={bookingsPage}
+            setBookingsPage={setBookingsPage}
+            isBookingsLoading={isBookingsLoading}
             agendaCollapsed={agendaCollapsed}
             setAgendaCollapsed={setAgendaCollapsed}
             staffList={staffList}

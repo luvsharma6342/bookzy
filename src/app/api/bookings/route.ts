@@ -13,17 +13,34 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "businessId is required" }, { status: 400 });
   }
 
-  // Try cache first (short TTL — bookings change frequently)
-  const cached = await cacheGet(cacheKeys.bookings(businessId));
-  if (cached) return NextResponse.json(cached);
+  const page = parseInt(searchParams.get("page") || "1", 10);
+  const limit = parseInt(searchParams.get("limit") || "50", 10);
+  const skip = (page - 1) * limit;
 
-  const bookings = await prisma.booking.findMany({
-    where: { businessId },
-    orderBy: { bookingTime: "desc" },
+  // We bypass Redis cache here because pagination combinations are vast and bookings change frequently.
+  // We'll rely on SWR client-side caching.
+  const [bookings, totalCount] = await Promise.all([
+    prisma.booking.findMany({
+      where: { businessId },
+      orderBy: { bookingTime: "desc" },
+      skip,
+      take: limit,
+      include: {
+        service: { select: { name: true, duration: true } } // include basic service details
+      }
+    }),
+    prisma.booking.count({ where: { businessId } })
+  ]);
+
+  return NextResponse.json({
+    data: bookings,
+    metadata: {
+      total: totalCount,
+      page,
+      limit,
+      totalPages: Math.ceil(totalCount / limit)
+    }
   });
-
-  await cacheSet(cacheKeys.bookings(businessId), bookings, TTL.BOOKINGS);
-  return NextResponse.json(bookings);
 }
 
 export async function POST(req: NextRequest) {

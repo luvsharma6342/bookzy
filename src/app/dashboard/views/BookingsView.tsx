@@ -7,6 +7,10 @@ import type { Business, Service, Staff, Booking } from '@/lib/db';
 interface BookingsViewProps {
   business: Business;
   bookings: Booking[];
+  bookingsMeta: { total: number; page: number; limit: number; totalPages: number };
+  bookingsPage: number;
+  setBookingsPage: React.Dispatch<React.SetStateAction<number>>;
+  isBookingsLoading?: boolean;
   services: Service[];
   staffList: Staff[];
   agendaCollapsed: boolean;
@@ -29,6 +33,10 @@ interface BookingsViewProps {
 export default function BookingsView({
   business,
   bookings,
+  bookingsMeta,
+  bookingsPage,
+  setBookingsPage,
+  isBookingsLoading,
   services,
   staffList,
   agendaCollapsed,
@@ -339,19 +347,30 @@ export default function BookingsView({
       </div>
 
       {/* Bookings Data Table */}
-      <div className="glass-card" style={{ padding: 0, overflowX: 'auto' }}>
+      <div className="glass-card" style={{ padding: 0, overflowX: 'auto', position: 'relative' }}>
+        
+        {/* Loading Overlay */}
+        {isBookingsLoading && (
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(255, 255, 255, 0.4)', zIndex: 10, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <span className="loader" style={{ width: '30px', height: '30px', border: '3px solid var(--border)', borderBottomColor: 'var(--primary)', borderRadius: '50%', display: 'inline-block', animation: 'spin 1s linear infinite' }}></span>
+          </div>
+        )}
+
         {filteredBookings.length === 0 ? (
           <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--muted)' }}>
-            <Calendar size={32} style={{ margin: '0 auto 0.75rem auto' }} />
-            <p>
-              {bookingSearch || bookingDateFrom || bookingDateTo 
-                ? "No bookings found matching your search or date criteria." 
-                : "No booking requests match your active filter."
+            <div style={{ background: 'var(--background)', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem auto' }}>
+              <Calendar size={32} style={{ color: 'var(--muted)', opacity: 0.5 }} />
+            </div>
+            <p style={{ fontWeight: 500, fontSize: '1.1rem', marginBottom: '0.25rem' }}>No bookings found</p>
+            <p style={{ fontSize: '0.9rem', maxWidth: '300px', margin: '0 auto' }}>
+              {bookingSearch || bookingFilter !== 'all' || bookingDateFrom || bookingDateTo 
+                ? "Try adjusting your filters to see more results."
+                : "You don't have any bookings yet. Share your booking link to get started!"
               }
             </p>
           </div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem', opacity: isBookingsLoading ? 0.6 : 1, transition: 'opacity 0.2s ease-in-out' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)', color: 'var(--muted)', fontWeight: 600 }}>
                 <th style={{ padding: '1rem' }}>Customer</th>
@@ -446,6 +465,31 @@ export default function BookingsView({
               })}
             </tbody>
           </table>
+        )}
+        
+        {/* Pagination Controls */}
+        {bookingsMeta && bookingsMeta.totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderTop: '1px solid var(--border)' }}>
+            <div style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>
+              Showing page {bookingsMeta.page} of {bookingsMeta.totalPages} ({bookingsMeta.total} total bookings)
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button 
+                onClick={() => setBookingsPage(p => Math.max(1, p - 1))}
+                disabled={bookingsPage === 1}
+                className="btn btn-secondary btn-sm"
+              >
+                Previous
+              </button>
+              <button 
+                onClick={() => setBookingsPage(p => Math.min(bookingsMeta.totalPages, p + 1))}
+                disabled={bookingsPage >= bookingsMeta.totalPages}
+                className="btn btn-secondary btn-sm"
+              >
+                Next
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>
