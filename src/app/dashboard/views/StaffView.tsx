@@ -10,7 +10,7 @@ interface StaffViewProps {
   reloadData: (businessId: string) => Promise<void>;
 }
 
-export default function StaffView({
+const StaffView = React.memo(function StaffView({
   business,
   staffList,
   openAddStaff,
@@ -18,8 +18,8 @@ export default function StaffView({
   reloadData
 }: StaffViewProps) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div className="flex flex-col gap-6">
+      <div className="flex justify-between items-center">
         <h3 style={{ fontSize: '1.25rem' }}>Staff Profiles</h3>
         <button 
           onClick={openAddStaff}
@@ -97,4 +97,7 @@ export default function StaffView({
       </div>
     </div>
   );
-}
+});
+
+
+export default StaffView;

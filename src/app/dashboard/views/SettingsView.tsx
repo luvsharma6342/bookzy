@@ -13,7 +13,7 @@ interface SettingsViewProps {
   showToast: (message: string, type: 'success' | 'error') => void;
 }
 
-export default function SettingsView({
+const SettingsView = React.memo(function SettingsView({
   business,
   setBusiness,
   paymentLoading,
@@ -24,7 +24,7 @@ export default function SettingsView({
   showToast
 }: SettingsViewProps) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div className="flex flex-col gap-6">
       <h3 style={{ fontSize: '1.25rem' }}>Business Settings</h3>
 
       {/* ── SUBSCRIPTION & BILLING CARD ── */}
@@ -87,7 +87,7 @@ export default function SettingsView({
 
               {business.plan !== 'growth' && (
                 <div style={{ border: '2px solid #6366f1', borderRadius: '12px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div className="flex justify-between items-center">
                     <span style={{ fontWeight: 700, color: '#6366f1' }}>Growth Plan</span>
                     <span style={{ fontWeight: 800, color: '#6366f1' }}>₹499/mo</span>
                   </div>
@@ -113,7 +113,7 @@ export default function SettingsView({
               )}
 
               <div style={{ border: '2px solid #a855f7', borderRadius: '12px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="flex justify-between items-center">
                   <span style={{ fontWeight: 700, color: '#a855f7' }}>Pro Plan</span>
                   <span style={{ fontWeight: 800, color: '#a855f7' }}>₹1,499/mo</span>
                 </div>
@@ -239,4 +239,7 @@ export default function SettingsView({
       </form>
     </div>
   );
-}
+});
+
+
+export default SettingsView;

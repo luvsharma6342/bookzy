@@ -30,7 +30,7 @@ interface BookingsViewProps {
   handleCSVExport: () => void;
 }
 
-export default function BookingsView({
+const BookingsView = React.memo(function BookingsView({
   business,
   bookings,
   bookingsMeta,
@@ -91,19 +91,19 @@ export default function BookingsView({
   }).sort((a, b) => new Date(b.bookingTime).getTime() - new Date(a.bookingTime).getTime());
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div className="flex flex-col gap-6">
       
       {/* TODAY'S AGENDA VIEW */}
-      <div className="glass-card" style={{ background: 'var(--card)', border: '1px solid var(--border)', padding: '1.25rem' }}>
+      <div className="glass-card bg-[var(--card)] border border-[var(--border)] p-5">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none' }} onClick={() => setAgendaCollapsed(!agendaCollapsed)}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <div className="flex items-center gap-2">
             <Calendar size={18} style={{ color: '#6366f1' }} />
             <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0 }}>Today's Schedule</h3>
             <span className="badge badge-primary" style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', borderRadius: '6px', background: 'var(--primary)', color: 'white', fontWeight: 700 }}>
               {todayBookings.length} {todayBookings.length === 1 ? 'booking' : 'bookings'}
             </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div className="flex items-center gap-3">
             <span style={{ fontSize: '0.8rem', color: 'var(--muted)', fontWeight: 550 }}>
               {new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}
             </span>
@@ -164,7 +164,7 @@ export default function BookingsView({
                         className="table-row-hover"
                       >
                         <div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div className="flex justify-between items-center">
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#10b981', fontWeight: 700, fontSize: '0.8rem' }}>
                               <Clock size={12} />
                               <span>{formattedTime} - {formattedEndTime}</span>
@@ -192,7 +192,7 @@ export default function BookingsView({
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.25rem', borderTop: '1px solid var(--border)', paddingTop: '0.5rem' }}>
                           <span style={{ fontSize: '0.9rem', fontWeight: 800 }}>₹{bk.price}</span>
                           
-                          <div style={{ display: 'flex', gap: '0.25rem' }}>
+                          <div className="flex gap-1">
                             {bk.status === 'pending' && (
                               <>
                                 <button 
@@ -494,4 +494,7 @@ export default function BookingsView({
       </div>
     </div>
   );
-}
+});
+
+
+export default BookingsView;

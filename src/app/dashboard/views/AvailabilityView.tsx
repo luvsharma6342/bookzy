@@ -10,7 +10,7 @@ interface AvailabilityViewProps {
   showToast: (message: string, type: 'success' | 'error') => void;
 }
 
-export default function AvailabilityView({
+const AvailabilityView = React.memo(function AvailabilityView({
   business,
   blockedDates,
   handleUpdateWorkingHours,
@@ -69,7 +69,7 @@ export default function AvailabilityView({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div className="flex flex-col gap-6">
       <h3 style={{ fontSize: '1.25rem' }}>Working Hours Settings</h3>
       
       <div className="glass-card" style={{ background: 'var(--card)' }}>
@@ -77,7 +77,7 @@ export default function AvailabilityView({
           Set the days and hours your business is open for booking. Unchecked days will block the booking calendar for customers.
         </p>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div className="flex flex-col gap-4">
           {Object.entries(business.workingHours).map(([day, hours]: [string, any]) => (
             <div key={day} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem', flexWrap: 'wrap', gap: '1rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', width: '120px' }}>
@@ -197,7 +197,7 @@ export default function AvailabilityView({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '250px', overflowY: 'auto' }}>
               {blockedDates.map((bd) => (
                 <div key={bd.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.65rem 0.85rem', background: 'var(--background)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                  <div className="flex flex-col gap-1">
                     <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>
                       {new Date(bd.date).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                     </span>
@@ -219,4 +219,7 @@ export default function AvailabilityView({
       </div>
     </div>
   );
-}
+});
+
+
+export default AvailabilityView;

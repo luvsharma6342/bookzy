@@ -27,7 +27,7 @@ interface ServicesViewProps {
   setNewServiceDesc: React.Dispatch<React.SetStateAction<string>>;
 }
 
-export default function ServicesView({
+const ServicesView = React.memo(function ServicesView({
   business,
   services,
   CATEGORY_MAP,
@@ -49,8 +49,8 @@ export default function ServicesView({
   setNewServiceDesc
 }: ServicesViewProps) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div className="flex flex-col gap-6">
+      <div className="flex justify-between items-center">
         <h3 style={{ fontSize: '1.25rem' }}>Service Catalogue ({services.length})</h3>
         <button onClick={() => setShowAddService(!showAddService)} className="btn btn-primary btn-sm">
           <Plus size={16} /> Add New Service
@@ -135,7 +135,7 @@ export default function ServicesView({
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
         {services.map(svc => (
           <div key={svc.id} className="glass-card" style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="flex justify-between items-center">
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <h4 style={{ fontSize: '1.1rem' }}>{svc.name}</h4>
@@ -148,7 +148,7 @@ export default function ServicesView({
                 </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div className="flex items-center gap-3">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>{svc.active ? 'Active' : 'Disabled'}</span>
                   
@@ -189,4 +189,7 @@ export default function ServicesView({
       </div>
     </div>
   );
-}
+});
+
+
+export default ServicesView;

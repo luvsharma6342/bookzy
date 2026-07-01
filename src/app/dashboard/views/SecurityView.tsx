@@ -7,14 +7,14 @@ interface SecurityViewProps {
   showToast: (message: string, type: 'success' | 'error') => void;
 }
 
-export default function SecurityView({
+const SecurityView = React.memo(function SecurityView({
   hasPasswordAccount,
   showToast
 }: SecurityViewProps) {
   const [passwordChangeLoading, setPasswordChangeLoading] = useState(false);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div className="flex flex-col gap-6">
       <h3 style={{ fontSize: '1.25rem' }}>Password &amp; Security</h3>
 
       <div className="glass-card" style={{ background: 'var(--card)', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -72,7 +72,7 @@ export default function SecurityView({
                 setPasswordChangeLoading(false);
               }
             }}
-            style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
+            className="flex flex-col gap-4"
           >
             <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
@@ -119,4 +119,7 @@ export default function SecurityView({
       </div>
     </div>
   );
-}
+});
+
+
+export default SecurityView;

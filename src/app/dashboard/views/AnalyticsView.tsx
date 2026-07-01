@@ -15,12 +15,12 @@ interface AnalyticsViewProps {
   sourceData: any[];
 }
 
-export default function AnalyticsView({ stats, bookings, chartData, sourceData }: AnalyticsViewProps) {
+const AnalyticsView = React.memo(function AnalyticsView({ stats, bookings, chartData, sourceData }: AnalyticsViewProps) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+    <div className="flex flex-col gap-8">
       {/* KPI Cards Grid */}
       <div className="kpi-grid">
-        <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div className="glass-card flex items-center gap-4">
           <div style={{ height: '2.5rem', width: '2.5rem', borderRadius: '8px', background: 'rgba(99, 102, 241, 0.15)', color: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Eye size={20} />
           </div>
@@ -30,7 +30,7 @@ export default function AnalyticsView({ stats, bookings, chartData, sourceData }
           </div>
         </div>
 
-        <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div className="glass-card flex items-center gap-4">
           <div style={{ height: '2.5rem', width: '2.5rem', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Calendar size={20} />
           </div>
@@ -40,7 +40,7 @@ export default function AnalyticsView({ stats, bookings, chartData, sourceData }
           </div>
         </div>
 
-        <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div className="glass-card flex items-center gap-4">
           <div style={{ height: '2.5rem', width: '2.5rem', borderRadius: '8px', background: 'rgba(168, 85, 247, 0.15)', color: '#a855f7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <TrendingUp size={20} />
           </div>
@@ -50,7 +50,7 @@ export default function AnalyticsView({ stats, bookings, chartData, sourceData }
           </div>
         </div>
 
-        <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div className="glass-card flex items-center gap-4">
           <div style={{ height: '2.5rem', width: '2.5rem', borderRadius: '8px', background: 'rgba(234, 179, 8, 0.15)', color: '#eab308', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <IndianRupee size={20} />
           </div>
@@ -108,4 +108,7 @@ export default function AnalyticsView({ stats, bookings, chartData, sourceData }
       </div>
     </div>
   );
-}
+});
+
+
+export default AnalyticsView;

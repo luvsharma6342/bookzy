@@ -7,7 +7,7 @@ interface WhatsAppViewProps {
   showToast: (message: string, type: 'success' | 'error') => void;
 }
 
-export default function WhatsAppView({
+const WhatsAppView = React.memo(function WhatsAppView({
   business,
   reloadData,
   showToast
@@ -81,8 +81,8 @@ export default function WhatsAppView({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div className="flex flex-col gap-6">
+      <div className="flex justify-between items-center">
         <h3 style={{ fontSize: '1.25rem' }}>WhatsApp Cloud API Integration</h3>
         <span className="badge badge-success">Pro Plan active</span>
       </div>
@@ -93,7 +93,7 @@ export default function WhatsAppView({
             Meta Developer Account Credentials
           </h4>
           
-          <form onSubmit={handleSaveWABA} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <form onSubmit={handleSaveWABA} className="flex flex-col gap-4">
             <div className="form-group">
               <label className="form-label">Meta WABA ID</label>
               <input 
@@ -138,7 +138,7 @@ export default function WhatsAppView({
           </form>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <div className="flex flex-col gap-6">
           <div className="glass-card" style={{ background: 'var(--card)' }}>
             <h4 style={{ fontSize: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem', marginBottom: '0.75rem' }}>
               Webhook Configuration
@@ -238,4 +238,7 @@ export default function WhatsAppView({
       </div>
     </div>
   );
-}
+});
+
+
+export default WhatsAppView;
