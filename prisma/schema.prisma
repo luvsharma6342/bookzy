@@ -162,6 +162,7 @@ model Booking {
   bookingSource String    @default("whatsapp_link") // "whatsapp_link" | "chatbot" | "manual"
   notes         String?
   googleEventId String?
+  reminderSent  Boolean   @default(false)
   createdAt     DateTime  @default(now())
 
   @@map("booking")
