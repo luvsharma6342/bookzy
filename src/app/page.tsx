@@ -711,7 +711,7 @@ export default function LandingPage() {
                   </div>
 
                   {/* Chat Body */}
-                  <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem', minHeight: '320px', fontSize: '0.85rem' }}>
+                  <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem', minHeight: '320px', fontSize: '0.85rem', color: '#111' }}>
                     {/* Bot Message */}
                     <div style={{ background: 'white', padding: '0.75rem', borderRadius: '8px', alignSelf: 'flex-start', maxWidth: '85%', boxShadow: '0 1px 1px rgba(0,0,0,0.1)' }}>
                       Hello Amit! 💇‍♂️
