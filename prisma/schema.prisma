@@ -85,6 +85,7 @@ model Business {
   metaWabaId               String?
   metaPhoneNumberId        String?
   metaPermanentToken       String?
+  googleMapsUrl            String?
   reviewsCount             Int              @default(0)
   rating                   Float            @default(5.0)
   
@@ -163,6 +164,8 @@ model Booking {
   notes         String?
   googleEventId String?
   reminderSent  Boolean   @default(false)
+  completedAt   DateTime?
+  reviewRequested Boolean @default(false)
   createdAt     DateTime  @default(now())
 
   @@map("booking")

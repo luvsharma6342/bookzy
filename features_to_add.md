@@ -71,3 +71,29 @@ This document outlines the priority roadmap for the features to be added to the 
   * Create a `Review` database model.
   * Trigger automated post-visit WhatsApp messages requesting feedback with custom review links.
   * Display average ratings and recent reviews on the storefront page.
+
+## 📈 Priority 3: Growth & Customer Acquisition (New Roadmap)
+
+### 7. Automated Review Generation
+* **Description**: Automatically send a WhatsApp message asking for a Google Maps review 2 hours after the admin clicks "Done" to mark the appointment as completed.
+* **Why**: Drastically increases local SEO on Google Maps, bringing organic foot traffic.
+
+### 8. Automated Reactivation Campaigns
+* **Description**: A cron job that messages customers who haven't booked in the last 45 days.
+* **Why**: Plugs the "leaky bucket" and brings churned customers back automatically.
+
+### 9. Shareable Mini-Storefront Links
+* **Description**: Generate a unique, beautiful mobile web link for each business to put in their Instagram bio.
+* **Why**: Converts social media followers directly into booked appointments.
+
+### 10. Referral / Loyalty Coupons
+* **Description**: After an appointment, the bot sends a unique promo code for the customer to share with friends.
+* **Why**: Incentivizes viral, word-of-mouth growth.
+
+### 11. Pre-Paid Bookings & Deposits
+* **Description**: Integrate Razorpay to collect deposits via WhatsApp payment links to secure slots.
+* **Why**: Eliminates no-shows and secures revenue upfront.
+
+### 12. Waitlist Feature
+* **Description**: Customers can join a waitlist. If a slot opens up, the bot instantly messages the waitlist.
+* **Why**: Ensures the merchant never has an empty chair due to last-minute cancellations.

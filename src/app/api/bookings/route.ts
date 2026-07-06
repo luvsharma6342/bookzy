@@ -237,7 +237,10 @@ export async function PUT(req: NextRequest) {
 
     const updated = await prisma.booking.update({
       where: { id },
-      data: { status },
+      data: { 
+        status,
+        ...(status === "completed" ? { completedAt: new Date() } : { completedAt: null })
+      },
     });
 
     // Invalidate bookings cache on status change

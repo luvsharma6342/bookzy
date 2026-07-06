@@ -178,12 +178,13 @@ const SettingsView = React.memo(function SettingsView({
           const phone = (target.elements.namedItem("bizPhone") as HTMLInputElement).value;
           const city = (target.elements.namedItem("bizCity") as HTMLInputElement).value;
           const description = (target.elements.namedItem("bizDesc") as HTMLTextAreaElement).value;
+          const googleMapsUrl = (target.elements.namedItem("googleMapsUrl") as HTMLInputElement).value;
 
           try {
             const res = await fetch("/api/businesses", {
               method: "PUT",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ id: business.id, name, category, phone, city, description })
+              body: JSON.stringify({ id: business.id, name, category, phone, city, description, googleMapsUrl })
             });
             if (res.ok) {
               const updated = await res.json();
@@ -232,6 +233,11 @@ const SettingsView = React.memo(function SettingsView({
         <div className="form-group">
           <label className="form-label">Brief Description</label>
           <textarea name="bizDesc" defaultValue={business.description} rows={3} className="form-textarea" />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Google Maps Review Link</label>
+          <input name="googleMapsUrl" type="url" placeholder="https://g.page/r/..." defaultValue={business.googleMapsUrl || ''} className="form-input" />
+          <span style={{ fontSize: '0.75rem', opacity: 0.6, marginTop: '4px' }}>Customers will receive this link to review your business after a completed booking.</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <button type="submit" className="btn btn-primary btn-sm">Save Settings</button>

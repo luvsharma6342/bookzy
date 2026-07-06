@@ -122,7 +122,8 @@ export async function PUT(req: NextRequest) {
       razorpaySubscriptionId,
       metaWabaId,
       metaPhoneNumberId,
-      metaPermanentToken
+      metaPermanentToken,
+      googleMapsUrl
     } = body;
 
     if (!id) {
@@ -155,6 +156,7 @@ export async function PUT(req: NextRequest) {
         metaWabaId: metaWabaId !== undefined ? metaWabaId : undefined,
         metaPhoneNumberId: metaPhoneNumberId !== undefined ? metaPhoneNumberId : undefined,
         metaPermanentToken: metaPermanentToken !== undefined ? metaPermanentToken : undefined,
+        googleMapsUrl: googleMapsUrl !== undefined ? googleMapsUrl : undefined,
       },
     });
 
