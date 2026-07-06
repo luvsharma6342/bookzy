@@ -4,9 +4,8 @@ import { sendWhatsAppTemplate } from "@/lib/whatsapp";
 
 export async function GET(req: NextRequest) {
   try {
-    // 45 days ago threshold (change to 1 minute for local testing if needed)
-    const thresholdDate = new Date(Date.now() - 2 * 60 * 1000); // 2 minutes (TESTING)
-    // const thresholdDate = new Date(Date.now() - 45 * 24 * 60 * 60 * 1000); // 45 days
+    // 45 days ago threshold
+    const thresholdDate = new Date(Date.now() - 45 * 24 * 60 * 60 * 1000);
 
     // Find all completed bookings older than the threshold where we haven't sent a reactivation yet
     const oldBookings = await prisma.booking.findMany({
