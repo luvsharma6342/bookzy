@@ -25,7 +25,7 @@ export default function WhatsAppView({
     if (!business) return;
     setSaveBizLoading(true);
     try {
-      const res = await fetch("/api/business", {
+      const res = await fetch("/api/businesses", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -50,21 +50,14 @@ export default function WhatsAppView({
     if (!business || !testPhoneInput) return;
     setTestSending(true);
     try {
-      const res = await fetch("/api/whatsapp/send-template", {
+      const res = await fetch("/api/whatsapp/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           businessId: business.id,
-          to: testPhoneInput,
+          toPhone: testPhoneInput,
           templateName: 'booking_confirmation',
-          components: [
-            { type: "body", parameters: [
-              { type: "text", text: "Test User" },
-              { type: "text", text: "Test Service" },
-              { type: "text", text: "Today at 5PM" },
-              { type: "text", text: "Any Staff" }
-            ]}
-          ]
+          params: ["Test User", "Test Service", "Today at 5PM", "Any Staff"]
         })
       });
       if (!res.ok) {
