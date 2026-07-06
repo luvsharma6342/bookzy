@@ -20,6 +20,7 @@ export interface Business {
   metaWabaId?: string;
   metaPhoneNumberId?: string;
   metaPermanentToken?: string;
+  googleMapsUrl?: string | null;
   reviewsCount: number;
   rating: number;
 }
