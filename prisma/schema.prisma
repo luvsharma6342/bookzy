@@ -166,6 +166,7 @@ model Booking {
   reminderSent  Boolean   @default(false)
   completedAt   DateTime?
   reviewRequested Boolean @default(false)
+  reactivationSent Boolean @default(false)
   createdAt     DateTime  @default(now())
 
   @@map("booking")
