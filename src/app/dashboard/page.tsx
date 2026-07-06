@@ -92,6 +92,7 @@ const WhatsAppView = dynamic(() => import('./views/WhatsAppView'), { loading: Lo
 const StaffView = dynamic(() => import('./views/StaffView'), { loading: LoadingView });
 const SettingsView = dynamic(() => import('./views/SettingsView'), { loading: LoadingView });
 const SecurityView = dynamic(() => import('./views/SecurityView'), { loading: LoadingView });
+const ShareView = dynamic(() => import('./views/ShareView'), { loading: LoadingView });
 
 export default function MerchantDashboard() {
   const router = useRouter();
@@ -103,7 +104,7 @@ export default function MerchantDashboard() {
   const [business, setBusiness] = useState<Business | null>(null);
 
   // Active Tab / View
-  const [activeView, setActiveView] = useState<'analytics' | 'bookings' | 'services' | 'availability' | 'whatsapp' | 'staff' | 'settings' | 'security'>('analytics');
+  const [activeView, setActiveView] = useState<'analytics' | 'bookings' | 'services' | 'availability' | 'whatsapp' | 'staff' | 'settings' | 'security' | 'share'>('analytics');
 
   const [bookingsPage, setBookingsPage] = useState(1);
   const bookingsLimit = 15;
@@ -1111,6 +1112,15 @@ export default function MerchantDashboard() {
           </button>
 
           <button 
+            onClick={() => setActiveView('share')} 
+            className={`btn btn-sm ${activeView === 'share' ? 'btn-primary' : 'btn-outline'}`}
+            style={{ justifyContent: 'flex-start', width: '100%', border: 'none', marginTop: '0.5rem' }}
+          >
+            <Share2 size={18} />
+            <span>Share Storefront</span>
+          </button>
+
+          <button 
             onClick={() => setActiveView('settings')} 
             className={`btn btn-sm ${activeView === 'settings' ? 'btn-primary' : 'btn-outline'}`}
             style={{ justifyContent: 'flex-start', width: '100%', border: 'none', marginTop: '0.5rem' }}
@@ -1365,6 +1375,13 @@ export default function MerchantDashboard() {
             cancelLoading={cancelLoading}
             handleCancelSubscription={handleCancelSubscription}
             reloadData={reloadData}
+            showToast={showToast}
+          />
+        )}
+
+        {activeView === 'share' && (
+          <ShareView 
+            business={business}
             showToast={showToast}
           />
         )}
