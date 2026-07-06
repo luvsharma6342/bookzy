@@ -48,7 +48,7 @@ export async function sendWhatsAppTemplate(
     template: {
       name: templateName,
       language: {
-        code: "en_US"
+        code: "en"
       },
       components: params && params.length > 0 ? [
         {
