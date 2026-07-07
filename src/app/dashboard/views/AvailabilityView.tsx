@@ -68,6 +68,29 @@ const AvailabilityView = React.memo(function AvailabilityView({
     }
   };
 
+  const [localWorkingHours, setLocalWorkingHours] = useState(business.workingHours);
+  const [hasChanges, setHasChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Sync if business object updates from outside
+  React.useEffect(() => {
+    setLocalWorkingHours(business.workingHours);
+    setHasChanges(false);
+  }, [business.workingHours]);
+
+  const handleSaveWorkingHours = async () => {
+    setIsSaving(true);
+    try {
+      await handleUpdateWorkingHours(localWorkingHours);
+      setHasChanges(false);
+      showToast("Working hours saved successfully!", "success");
+    } catch (err: any) {
+      showToast("Failed to save working hours", "error");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6">
       <h3 style={{ fontSize: '1.25rem' }}>Working Hours Settings</h3>
@@ -78,7 +101,7 @@ const AvailabilityView = React.memo(function AvailabilityView({
         </p>
 
         <div className="flex flex-col gap-4">
-          {Object.entries(business.workingHours).map(([day, hours]: [string, any]) => (
+          {Object.entries(localWorkingHours).map(([day, hours]: [string, any]) => (
             <div key={day} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem', flexWrap: 'wrap', gap: '1rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', width: '120px' }}>
                 <div 
@@ -96,11 +119,11 @@ const AvailabilityView = React.memo(function AvailabilityView({
                     cursor: 'pointer'
                   }}
                   onClick={() => {
-                    const updatedHours = {
-                      ...business.workingHours,
+                    setLocalWorkingHours({
+                      ...localWorkingHours,
                       [day]: { ...hours, closed: !hours.closed }
-                    };
-                    handleUpdateWorkingHours(updatedHours);
+                    });
+                    setHasChanges(true);
                   }}
                 >
                   {!hours.closed && <Check size={10} />}
@@ -116,11 +139,11 @@ const AvailabilityView = React.memo(function AvailabilityView({
                     style={{ width: '110px', padding: '0.3rem 0.5rem', fontSize: '0.85rem' }} 
                     value={hours.open}
                     onChange={(e) => {
-                      const updatedHours = {
-                        ...business.workingHours,
+                      setLocalWorkingHours({
+                        ...localWorkingHours,
                         [day]: { ...hours, open: e.target.value }
-                      };
-                      handleUpdateWorkingHours(updatedHours);
+                      });
+                      setHasChanges(true);
                     }}
                   />
                   <span style={{ opacity: 0.6 }}>to</span>
@@ -130,11 +153,11 @@ const AvailabilityView = React.memo(function AvailabilityView({
                     style={{ width: '110px', padding: '0.3rem 0.5rem', fontSize: '0.85rem' }} 
                     value={hours.close}
                     onChange={(e) => {
-                      const updatedHours = {
-                        ...business.workingHours,
+                      setLocalWorkingHours({
+                        ...localWorkingHours,
                         [day]: { ...hours, close: e.target.value }
-                      };
-                      handleUpdateWorkingHours(updatedHours);
+                      });
+                      setHasChanges(true);
                     }}
                   />
                 </div>
@@ -143,6 +166,17 @@ const AvailabilityView = React.memo(function AvailabilityView({
               )}
             </div>
           ))}
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+          <button 
+            className={`btn ${hasChanges ? 'btn-primary' : 'btn-outline'}`}
+            disabled={!hasChanges || isSaving}
+            onClick={handleSaveWorkingHours}
+            style={{ minWidth: '150px' }}
+          >
+            {isSaving ? 'Saving...' : (hasChanges ? 'Save Settings' : 'Saved')}
+          </button>
         </div>
       </div>
 

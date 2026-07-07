@@ -183,15 +183,23 @@ export default function StorefrontClient({
     if (!hours || hours.closed) return [];
 
     const slots: string[] = [];
-    const [startHour] = hours.open.split(':').map(Number);
-    const [endHour] = hours.close.split(':').map(Number);
+    const [startHour, startMin] = hours.open.split(':').map(Number);
+    const [endHour, endMin] = hours.close.split(':').map(Number);
 
-    for (let hour = startHour; hour < endHour; hour++) {
+    const startTimeInMinutes = startHour * 60 + (startMin || 0);
+    const endTimeInMinutes = endHour * 60 + (endMin || 0);
+
+    // Generate slots every 60 minutes (1 hour gap)
+    for (let time = startTimeInMinutes; time < endTimeInMinutes; time += 60) {
+      const hour = Math.floor(time / 60);
+      const min = time % 60;
+      
       const isPM = hour >= 12;
       const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
       const suffix = isPM ? 'PM' : 'AM';
-      slots.push(`${displayHour}:00 ${suffix}`);
-      slots.push(`${displayHour}:30 ${suffix}`);
+      const minStr = min === 0 ? '00' : String(min).padStart(2, '0');
+      
+      slots.push(`${displayHour}:${minStr} ${suffix}`);
     }
     return slots;
   };
@@ -318,6 +326,34 @@ export default function StorefrontClient({
     window.open(waLink, '_blank');
     setShowWAConfirmation(true);
   };
+  const getTodayWorkingHours = () => {
+    try {
+      const today = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+      const hours = (business.workingHours as any)?.[today];
+      if (!hours || hours.closed) {
+        return isHindi ? 'आज बंद है' : 'Closed Today';
+      }
+      
+      const formatTime = (time24: string) => {
+        if (!time24) return '';
+        const [h, m] = time24.split(':');
+        const hour = parseInt(h);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const hour12 = hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour);
+        return `${hour12}:${m} ${ampm}`;
+      };
+
+      const openTime = formatTime(hours.open);
+      const closeTime = formatTime(hours.close);
+      
+      if (isHindi) {
+        return `${openTime.replace('AM', 'सुबह').replace('PM', 'दोपहर/शाम')} - ${closeTime.replace('AM', 'सुबह').replace('PM', 'दोपहर/शाम')}`;
+      }
+      return `${openTime} - ${closeTime}`;
+    } catch {
+      return isHindi ? '10:00 सुबह - 08:00 शाम' : '10:00 AM - 08:00 PM';
+    }
+  };
 
   return (
     <div style={{ background: 'var(--background)', minHeight: '100vh', color: 'var(--foreground)' }}>
@@ -389,7 +425,7 @@ export default function StorefrontClient({
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Clock size={16} style={{ color: '#6366f1' }} />
-              <span>{isHindi ? '10:00 सुबह - 08:00 शाम' : '10:00 AM - 08:00 PM'}</span>
+              <span>{getTodayWorkingHours()}</span>
             </div>
           </div>
         </div>

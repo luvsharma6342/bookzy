@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Business } from '@/lib/db';
 import { Copy, QrCode, CheckCircle, Share2, Smartphone, Link as LinkIcon, Download } from 'lucide-react';
 import { motion } from 'framer-motion';
+import copy from 'copy-to-clipboard';
 
 interface ShareViewProps {
   business: Business;
@@ -12,22 +13,48 @@ interface ShareViewProps {
 
 export default function ShareView({ business, showToast }: ShareViewProps) {
   const [copied, setCopied] = useState(false);
-  
+
   const storefrontUrl = `https://bookze.vercel.app/book/${business.slug}`;
-    
+
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(storefrontUrl)}`;
 
-  const handleCopyLink = () => {
-    // We use copy-to-clipboard library to handle all browser quirks (Safari, mobile Chrome)
-    // and insecure context issues perfectly.
-    const success = require('copy-to-clipboard')(storefrontUrl);
-    
-    if (success) {
+  const handleCopyLink = (e: React.MouseEvent<HTMLButtonElement>) => {
+    // Prevent parent clicks or form submissions from interrupting the action
+    e.preventDefault();
+    e.stopPropagation();
+
+    // MUST NOT BE ASYNC. Async event handlers lose the "user gesture" context 
+    // required by browsers for execCommand('copy') to work on mobile/non-secure IPs.
+
+    let isCopied = false;
+    try {
+      // 1. Synchronous fallback for HTTP/LAN testing or older browsers
+      isCopied = copy(storefrontUrl); // 'copy' returns a boolean instantly
+    } catch (err) {
+      console.error("copy-to-clipboard error:", err);
+    }
+
+    if (isCopied) {
       setCopied(true);
-      showToast("Copied to clipboard", "success");
+      if (showToast) showToast("Copied to clipboard", "success");
       setTimeout(() => setCopied(false), 3000);
+      return; // Exit function immediately on success
+    }
+
+    // 2. If the library fails, try modern clipboard API as a last resort
+    if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(storefrontUrl)
+        .then(() => {
+          setCopied(true);
+          if (showToast) showToast("Copied to clipboard", "success");
+          setTimeout(() => setCopied(false), 3000);
+        })
+        .catch((err) => {
+          console.error("Clipboard failure:", err);
+          if (showToast) showToast("Failed to copy link. Please select and copy manually.", "error");
+        });
     } else {
-      showToast("Failed to copy link", "error");
+      if (showToast) showToast("Failed to copy link. Please select and copy manually.", "error");
     }
   };
 
@@ -68,7 +95,7 @@ export default function ShareView({ business, showToast }: ShareViewProps) {
         <div className="flex flex-col gap-6">
           <div className="glass-panel p-6 border border-slate-800 rounded-2xl relative overflow-hidden group">
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            
+
             <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
               <Smartphone size={20} className="text-pink-500" />
               Link in Bio
@@ -76,21 +103,20 @@ export default function ShareView({ business, showToast }: ShareViewProps) {
             <p className="text-sm text-slate-400 mb-6">
               Paste this link in your Instagram, TikTok, and Facebook bio to convert followers into paying customers instantly.
             </p>
-            
+
             <div className="flex items-center gap-2 bg-slate-900/80 p-3 rounded-xl border border-slate-700/50 mb-6 relative">
               <LinkIcon size={16} className="text-slate-500 shrink-0" />
               <span className="text-sm font-medium text-slate-300 truncate select-all">{storefrontUrl}</span>
             </div>
 
-            <motion.button 
+            <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleCopyLink}
-              className={`w-full py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg ${
-                copied 
-                ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/25' 
+              className={`w-full py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg ${copied
+                ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/25'
                 : 'bg-white hover:bg-slate-100 text-slate-900 shadow-white/10'
-              }`}
+                }`}
             >
               {copied ? <CheckCircle size={18} /> : <Copy size={18} />}
               {copied ? 'Copied to Clipboard!' : 'Copy Storefront Link'}
@@ -120,11 +146,11 @@ export default function ShareView({ business, showToast }: ShareViewProps) {
         <div className="flex flex-col h-full">
           <div className="glass-panel p-8 border border-slate-800 rounded-2xl flex flex-col items-center text-center h-full relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-indigo-500/10 rounded-full blur-[80px] pointer-events-none group-hover:bg-indigo-500/20 transition-all duration-700" />
-            
+
             <div className="mb-6 inline-flex items-center justify-center p-3 bg-indigo-500/10 rounded-full">
               <QrCode size={28} className="text-indigo-400" />
             </div>
-            
+
             <h3 className="text-xl font-bold text-white mb-2">Storefront QR Code</h3>
             <p className="text-sm text-slate-400 mb-8 max-w-xs">
               Patients and customers can scan this with their phone camera to instantly open your booking page.
@@ -132,15 +158,15 @@ export default function ShareView({ business, showToast }: ShareViewProps) {
 
             <div className="bg-white p-4 rounded-2xl shadow-xl shadow-black/50 mb-8 relative z-10 group-hover:scale-105 transition-transform duration-500">
               {/* Using a standard img tag with an external QR API */}
-              <img 
-                src={qrCodeUrl} 
-                alt="Storefront QR Code" 
+              <img
+                src={qrCodeUrl}
+                alt="Storefront QR Code"
                 className="w-48 h-48 md:w-56 md:h-56 object-contain"
                 crossOrigin="anonymous"
               />
             </div>
 
-            <motion.button 
+            <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleDownloadQR}
