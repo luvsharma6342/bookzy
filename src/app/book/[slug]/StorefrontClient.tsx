@@ -392,8 +392,12 @@ export default function StorefrontClient({
         <div className="glass-card" style={{ background: 'var(--card)', display: 'flex', flexDirection: 'column', gap: '1.25rem', boxShadow: 'var(--shadow-lg)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
-              <div style={{ width: '5rem', height: '5rem', borderRadius: '12px', background: 'linear-gradient(135deg, #a855f7, #6366f1)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '2rem', boxShadow: 'var(--shadow-md)' }}>
-                {business.name.substring(0, 2).toUpperCase()}
+              <div style={{ width: '5rem', height: '5rem', borderRadius: '12px', background: 'linear-gradient(135deg, #a855f7, #6366f1)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '2rem', boxShadow: 'var(--shadow-md)', overflow: 'hidden', flexShrink: 0 }}>
+                {business.logoUrl ? (
+                  <img src={business.logoUrl} alt={`${business.name} Logo`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  business.name.substring(0, 2).toUpperCase()
+                )}
               </div>
               <div>
                 <h1 style={{ fontSize: '1.75rem', fontWeight: 800, fontFamily: 'var(--font-title)' }}>{business.name}</h1>

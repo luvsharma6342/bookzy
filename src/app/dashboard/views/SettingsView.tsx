@@ -1,5 +1,5 @@
 import React from 'react';
-import { CreditCard, Loader2, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { CreditCard, Loader2, ShieldCheck, AlertTriangle, Image as ImageIcon, Upload } from 'lucide-react';
 import type { Business } from '@/lib/db';
 
 interface SettingsViewProps {
@@ -23,6 +23,73 @@ const SettingsView = React.memo(function SettingsView({
   reloadData,
   showToast
 }: SettingsViewProps) {
+  const [logoUploading, setLogoUploading] = React.useState(false);
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    if (file.size > 5 * 1024 * 1024) {
+      showToast("Image must be less than 5MB", "error");
+      return;
+    }
+    
+    setLogoUploading(true);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = async () => {
+        const MAX_WIDTH = 256;
+        const MAX_HEIGHT = 256;
+        let width = img.width;
+        let height = img.height;
+        
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+        
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL("image/webp", 0.8);
+          
+          try {
+            const res = await fetch("/api/businesses", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id: business.id, logoUrl: dataUrl })
+            });
+            if (res.ok) {
+              const updated = await res.json();
+              setBusiness(updated);
+              showToast("Logo updated successfully!", "success");
+              reloadData(business.id);
+            } else {
+              showToast("Failed to upload logo", "error");
+            }
+          } catch(err) {
+            showToast("Failed to upload logo", "error");
+          } finally {
+            setLogoUploading(false);
+          }
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="flex flex-col gap-6">
       <h3 style={{ fontSize: '1.25rem' }}>Business Settings</h3>
@@ -202,6 +269,38 @@ const SettingsView = React.memo(function SettingsView({
         className="glass-card" 
         style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', background: 'var(--card)' }}
       >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '1.25rem', marginBottom: '0.5rem' }}>
+          <div style={{
+            width: '72px', height: '72px', borderRadius: '12px', background: 'var(--muted)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+            border: '2px dashed var(--border)', position: 'relative', flexShrink: 0
+          }}>
+            {logoUploading ? (
+              <Loader2 size={24} style={{ opacity: 0.5, animation: 'spin 1s linear infinite' }} />
+            ) : business.logoUrl ? (
+              <img src={business.logoUrl} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <ImageIcon size={24} style={{ opacity: 0.5 }} />
+            )}
+            <input 
+              type="file" 
+              accept="image/*" 
+              onChange={handleLogoUpload}
+              style={{ opacity: 0, position: 'absolute', inset: 0, cursor: 'pointer', zIndex: 10 }}
+              title="Upload Logo"
+            />
+          </div>
+          <div>
+            <h4 style={{ fontWeight: 700, fontSize: '0.95rem' }}>Business Logo</h4>
+            <p style={{ fontSize: '0.75rem', opacity: 0.6, marginTop: '0.2rem' }}>
+              Max 5MB. Will be automatically resized and converted to keep your dashboard lightning fast.
+            </p>
+            <div style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 600, marginTop: '0.4rem', pointerEvents: 'none' }}>
+              <Upload size={12} style={{ display: 'inline', marginRight: '4px' }}/> Click image to upload
+            </div>
+          </div>
+        </div>
+
         <h4 style={{ fontWeight: 700, fontSize: '0.95rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>Business Details</h4>
         <div className="grid-2">
           <div className="form-group">

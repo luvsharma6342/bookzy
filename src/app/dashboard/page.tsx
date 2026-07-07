@@ -1266,7 +1266,12 @@ export default function MerchantDashboard() {
         {/* Dashboard Header Bar */}
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
           <div>
-            <h2 style={{ fontSize: '1.75rem', fontWeight: 800 }}>{business.name} Panel</h2>
+            <h2 style={{ fontSize: '1.75rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              {business.logoUrl && (
+                <img src={business.logoUrl} alt="Logo" style={{ width: '52px', height: '52px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0 }} />
+              )}
+              {business.name} Panel
+            </h2>
             <p style={{ color: 'var(--muted)', fontSize: '0.9rem', marginTop: '0.25rem' }}>
               Welcome back! Manage your booking requests, scheduling availability, and customer catalogue.
             </p>

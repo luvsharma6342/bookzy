@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { name, slug, category, phone, city, description } = body;
+    const { name, slug, category, phone, city, description, logoUrl } = body;
 
     if (!name || !slug) {
       return NextResponse.json({ error: "Name and slug are required" }, { status: 400 });
@@ -89,6 +89,8 @@ export async function POST(req: NextRequest) {
         plan: "free",
         rating: 5.0,
         reviewsCount: 0,
+        googleMapsUrl: null,
+        logoUrl: logoUrl || null
       },
     });
 
@@ -123,7 +125,8 @@ export async function PUT(req: NextRequest) {
       metaWabaId,
       metaPhoneNumberId,
       metaPermanentToken,
-      googleMapsUrl
+      googleMapsUrl,
+      logoUrl
     } = body;
 
     if (!id) {
@@ -157,6 +160,7 @@ export async function PUT(req: NextRequest) {
         metaPhoneNumberId: metaPhoneNumberId !== undefined ? metaPhoneNumberId : undefined,
         metaPermanentToken: metaPermanentToken !== undefined ? metaPermanentToken : undefined,
         googleMapsUrl: googleMapsUrl !== undefined ? googleMapsUrl : undefined,
+        logoUrl: logoUrl !== undefined ? logoUrl : undefined,
       },
     });
 
