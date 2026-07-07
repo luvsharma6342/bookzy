@@ -26,10 +26,10 @@ export default function ShareView({ business, showToast }: ShareViewProps) {
     // MUST NOT BE ASYNC. Async event handlers lose the "user gesture" context 
     // required by browsers for execCommand('copy') to work on mobile/non-secure IPs.
 
-    let isCopied = false;
+    let isCopied: any = false;
     try {
       // 1. Synchronous fallback for HTTP/LAN testing or older browsers
-      isCopied = copy(storefrontUrl); // 'copy' returns a boolean instantly
+      isCopied = copy(storefrontUrl) as any; // Bypass incorrect TS inference
     } catch (err) {
       console.error("copy-to-clipboard error:", err);
     }
